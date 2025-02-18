@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { uploadMarkdown, mergeDevelopToMaster } from "@/app/actions";
 import MDEditor, { commands } from "@uiw/react-md-editor";
+import { Button } from "@/components/ui/button";
+import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 export default function MarkdownUploader() {
   const [message, setMessage] = useState("");
@@ -42,6 +48,7 @@ export default function MarkdownUploader() {
     if (!validateContent()) return;
 
     const timestamp = getCurrentTimestamp();
+    const timestampName = Date.now();
     
     // Crear contenido con formato específico
     const fullContent = `---
@@ -61,7 +68,7 @@ ${content}`;
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)/g, "");
 
-    const fileName = `${timestamp}_${formattedTitle}.md`;
+    const fileName = `${timestampName}_${formattedTitle}.md`;
 
     const markdownFile = new File([fullContent], fileName, {
       type: "text/markdown",
@@ -81,78 +88,84 @@ ${content}`;
   };
 
   return (
-    <div className="p-4 border rounded-lg space-y-4">
-      <h2 className="text-xl font-semibold">Editor</h2>
+    <Card className="max-w-3xl mx-auto">
+      <CardHeader>
+        <CardTitle className="text-2xl">Editor de Contenido</CardTitle>
+      </CardHeader>
+      
+      <CardContent>
+        <form onSubmit={handleUpload} className="space-y-6">
+          <div className="space-y-3">
+            <Label>Tipo de contenido</Label>
+            <Select value={type} onValueChange={setType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Selecciona tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="blog">Entrada de Blog</SelectItem>
+                <SelectItem value="projects">Proyecto</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-      <form onSubmit={handleUpload} className="space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Tipo de contenido</label>
-          <select
-            className="p-2 border rounded w-full"
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-          >
-            <option value="blog">Entrada de Blog</option>
-            <option value="projects">Proyecto</option>
-          </select>
-        </div>
+          <div className="space-y-3">
+            <Label>Título</Label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Ej: 🌍 El Cambio Climático y su Impacto"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Título</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="p-2 border rounded w-full"
-            placeholder="Ej: 🌍 El Cambio Climático y su Impacto"
-            required
-          />
-        </div>
+          <div className="space-y-3">
+            <Label>Descripción</Label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Descripción breve para el excerpt..."
+              className="min-h-[100px]"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Descripción</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="p-2 border rounded w-full h-24"
-            placeholder="Descripción breve para el excerpt..."
-            required
-          />
-        </div>
+          <div className="space-y-3">
+            <Label>Contenido</Label>
+            <div className="overflow-hidden rounded-lg border">
+              <MDEditor
+                value={content}
+                onChange={(value = "") => setContent(value)}
+                height={400}
+                preview="live"
+                extraCommands={[
+                  commands.codePreview,
+                  commands.fullscreen,
+                  commands.title1,
+                ]}
+              />
+            </div>
+            {contentError && <p className="text-sm text-destructive mt-2">{contentError}</p>}
+          </div>
 
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Contenido</label>
-          <MDEditor
-            value={content}
-            onChange={(value = "") => setContent(value)}
-            height={400}
-            preview="live"
-            extraCommands={[
-              commands.codePreview,
-              commands.fullscreen,
-              commands.title1,
-            ]}
-            className="rounded-lg overflow-hidden"
-          />
-          {contentError && <p className="text-red-500 text-sm">{contentError}</p>}
-        </div>
+          <div className="flex gap-4">
+            <Button type="submit" className="bg-primary hover:bg-primary/90">
+              Subir a develop
+            </Button>
+            
+            <Button
+              type="button"
+              onClick={handleMerge}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              Merge a master
+            </Button>
+          </div>
+        </form>
 
-        <button
-          type="submit"
-          className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-        >
-          Subir a develop
-        </button>
-      </form>
-
-      <button
-        onClick={handleMerge}
-        className="bg-red-500 text-white p-2 rounded hover:bg-red-600"
-      >
-        Merge a master
-      </button>
-
-      {message && <p className="mt-2 text-sm">{message}</p>}
-    </div>
+        {message && (
+          <div className="mt-4 p-4 rounded-lg bg-muted/50">
+            <p className="text-sm text-muted-foreground">{message}</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

@@ -1,10 +1,12 @@
-import MarkdownUploader from "@/app/components/MarkdownUploader";
+import { redirect } from "next/navigation";
+import { auth } from "./auth";
 
-export default function Home() {
-  return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-2xl font-bold mb-4">CMS Manglaria</h1>
-      <MarkdownUploader />
-    </div>
-  );
+export default async function Home() {
+  const session = await auth();
+  
+  if (session?.user) {
+    redirect("/editor");
+  } else {
+    redirect("/login");
+  }
 }
