@@ -67,7 +67,7 @@ export default function LoginPage() {
                 type="text"
                 required
                 disabled={isLoading}
-                placeholder="admin"
+                placeholder="username"
               />
             </div>
 
