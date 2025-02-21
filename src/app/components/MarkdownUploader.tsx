@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { uploadMarkdown, mergeDevelopToMaster } from "@/app/actions";
+import { uploadMarkdown, mergeDevelopToMain } from "@/app/actions";
 import MDEditor, { commands } from "@uiw/react-md-editor";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
@@ -83,7 +83,7 @@ ${content}`;
   };
 
   const handleMerge = async () => {
-    const response = await mergeDevelopToMaster();
+    const response = await mergeDevelopToMain();
     setMessage(response.success || response.error || "Operación realizada sin mensaje.");
   };
 

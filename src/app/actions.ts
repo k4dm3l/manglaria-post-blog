@@ -100,7 +100,7 @@ export async function uploadMarkdown(formData: FormData) {
 }
 
 
-export async function mergeDevelopToMaster() {
+export async function mergeDevelopToMain() {
   "use server";
 
   try {
@@ -149,4 +149,91 @@ export async function mergeDevelopToMaster() {
     }
     return { error: `Error en merge: ${error.response?.data?.message || error.message}` };
   }
+}
+
+// Obtener lista de posts
+export async function getPosts(type: "blog" | "projects") {
+  try {
+    const { data } = await octokit.repos.getContent({
+      owner,
+      repo,
+      path: `src/content/${type}`,
+      ref: "develop"
+    });
+
+    return (data as any[]).filter(file => 
+      file.type === "file" && 
+      file.name.endsWith(".md")
+    ).map(file => ({
+      name: file.name.replace(/\.md$/, ""),
+      path: file.path,
+      sha: file.sha,
+      download_url: file.download_url
+    }));
+  } catch (error: any) {
+    console.error("Error obteniendo posts:", error);
+    return [];
+  }
+}
+
+// Obtener contenido de un post específico
+export async function getPostContent(path: string) {
+  try {
+    const { data } = await octokit.repos.getContent({
+      owner,
+      repo,
+      path,
+      ref: "develop"
+    });
+
+    const content = Buffer.from((data as any).content, "base64").toString("utf8");
+    const { title, excerpt } = parseFrontmatter(content);
+    
+    return {
+      title,
+      excerpt,
+      content: content.split("---")[2].trim(),
+      sha: (data as any).sha
+    };
+  } catch (error: any) {
+    console.error("Error obteniendo contenido:", error);
+    return null;
+  }
+}
+
+// Actualizar post existente
+export async function updateMarkdownFile(
+  path: string,
+  content: string,
+  sha: string
+) {
+  try {
+    await octokit.repos.createOrUpdateFileContents({
+      owner,
+      repo,
+      path,
+      message: `Actualización: ${path.split("/").pop()}`,
+      content: Buffer.from(content).toString("base64"),
+      branch: "develop",
+      sha,
+      committer: {
+        name: "CMS Manglaria",
+        email: "cms@manglaria.org",
+      },
+    });
+
+    return { success: "Post actualizado correctamente" };
+  } catch (error: any) {
+    console.error("Error actualizando post:", error);
+    return { error: `Error al actualizar: ${error.response?.data?.message || error.message}` };
+  }
+}
+
+// Helper para parsear frontmatter
+function parseFrontmatter(content: string) {
+  const frontmatter = content.split("---")[1];
+  return {
+    title: frontmatter.match(/title: (.*)/)?.[1]?.trim() || "",
+    excerpt: frontmatter.match(/excerpt: (.*)/)?.[1]?.trim() || ""
+  };
 }

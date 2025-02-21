@@ -20,9 +20,18 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
+  // Proteger rutas de edición específicas
+  if (pathname.match(/^\/editor\/(blog|projects)\/[^/]+$/) && !isAuthenticated) {
+    return NextResponse.redirect(new URL("/login", req.url));
+  }
+
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: ["/editor/:path*", "/login"], 
+  matcher: [
+    "/editor/:path*",
+    "/login",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)"
+  ], 
 };
