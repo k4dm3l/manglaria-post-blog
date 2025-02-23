@@ -51,8 +51,6 @@ export async function GET(request: Request) {
       })
       .exec();
 
-    console.log({ projects });
-
     const formattedProjects = projects.map((project) => ({
       ...project.toObject(),
       author: {
