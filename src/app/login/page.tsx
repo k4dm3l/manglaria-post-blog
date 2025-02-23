@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [error, setError] = useState("");
@@ -32,12 +32,8 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
+      if (result?.error) throw new Error(result.error);
       window.location.href = searchParams.get("from") || "/dashboard";
-      
     } catch (err) {
       setError("Credenciales inválidas. Intenta nuevamente.");
     } finally {
@@ -58,7 +54,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Usuario</Label>
+              <Label htmlFor="email">Usuario</Label>
               <Input
                 id="email"
                 name="email"
@@ -95,6 +91,17 @@ export default function LoginPage() {
           </Button>
         </form>
       </div>
+    </div>
+  );
+}
+
+// Componente principal de la página
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-muted/40">
+      <Suspense fallback={<div>Cargando formulario...</div>}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }
