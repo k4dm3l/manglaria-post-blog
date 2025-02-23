@@ -11,9 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
 type MarkdownUploaderProps = {
-  type?: "blogs" | "projects"; // Tipo de contenido (opcional, por defecto "blog")
+  type?: "blogs" | "projects";
   initialData?: {
-    // Datos iniciales para el modo de edición
     _id?: string;
     title?: string;
     description?: string;
@@ -27,7 +26,7 @@ type MarkdownUploaderProps = {
     content: string;
     image: string;
     author: string;
-  }) => Promise<void>; // Función para manejar el guardado
+  }) => Promise<void>;
 };
 
 export default function MarkdownUploader({
@@ -69,7 +68,7 @@ export default function MarkdownUploader({
 
           if (response.ok) {
             const data = await response.json();
-            setNewImage(data.url); // Guarda la URL de la nueva imagen
+            setNewImage(data.url);
           } else {
             setMessage('Error al subir la imagen');
           }
@@ -96,7 +95,7 @@ export default function MarkdownUploader({
 
     if (!validateContent()) return;
 
-    const finalImage = newImage || image; // Usar la nueva imagen si está disponible, de lo contrario, usar la imagen actual
+    const finalImage = newImage || image;
 
     if (!finalImage) {
       setMessage("Debes subir una imagen");
@@ -114,7 +113,7 @@ export default function MarkdownUploader({
       };
 
       if (onSave) {
-        await onSave(data); // Usar la función onSave si está definida
+        await onSave(data);
       } else {
         const response = await fetch("/api/save-content", {
           method: "POST",
@@ -128,7 +127,6 @@ export default function MarkdownUploader({
 
         if (response.ok) {
           setMessage("Contenido guardado exitosamente");
-          // Limpiar el formulario después de guardar
           setTitle("");
           setDescription("");
           setContent("");

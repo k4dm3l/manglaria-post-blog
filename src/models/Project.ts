@@ -17,14 +17,14 @@ const projectSchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      minlength: 5, // Mínimo 5 caracteres
-      maxlength: 200, // Máximo 100 caracteres
+      minlength: 5,
+      maxlength: 200,
     },
     description: {
       type: String,
       required: true,
-      minlength: 10, // Mínimo 10 caracteres
-      maxlength: 300, // Máximo 200 caracteres
+      minlength: 10,
+      maxlength: 300,
     },
     content: { type: String, required: true },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

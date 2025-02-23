@@ -29,21 +29,18 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>(
   { timestamps: true }
 );
 
-// Hash password antes de guardar
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
-// Método para comparar contraseñas
 userSchema.methods.comparePassword = async function(
   candidatePassword: string
 ): Promise<boolean> {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
-// Verificar si el modelo ya está compilado
 if (mongoose.models.User) {
   delete mongoose.models.User;
 }

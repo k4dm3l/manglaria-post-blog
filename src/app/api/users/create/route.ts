@@ -1,4 +1,3 @@
-// src/app/api/users/create/route.ts
 import { NextResponse } from "next/server";
 import User from "@/models/User";
 import connect from "@/lib/db";
@@ -12,14 +11,12 @@ export async function POST(req: Request) {
   try {
     await connect();
 
-    // Verificar token de autenticación
     const headersList = await headers();
     const authHeader = headersList.get("authorization");
     let session = null;
 
     const token = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
 
-    // Verificar si el usuario es administrador
     if (token && token !== 'null') {
       session = await validateToken(token);
 
@@ -43,7 +40,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "No tienes permisos para crear usuarios" }, { status: 403 });
     }
 
-    // Crear nuevo usuario
     const { name, email, password, role } = await req.json();
     const existingUser = await User.findOne({ email });
     if (existingUser) {

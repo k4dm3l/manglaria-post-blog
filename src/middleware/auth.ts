@@ -9,7 +9,7 @@ export async function authMiddleware(req: Request) {
 
   try {
     const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET!);
-    return decoded; // Retorna el payload del token
+    return decoded;
   } catch (err) {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }

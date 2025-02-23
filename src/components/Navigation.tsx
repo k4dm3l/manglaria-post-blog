@@ -9,7 +9,7 @@ import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Pen, Feather } from "lucide-react"; // Importar íconos de lucide-react
+import { Feather } from "lucide-react";
 
 export default function Navigation() {
   const { data: session, status } = useSession();
@@ -22,12 +22,10 @@ export default function Navigation() {
     });
   };
 
-  // Mostrar un loader mientras se carga la sesión
   if (status === "loading") {
-    return null; // O un loader personalizado
+    return null;
   }
 
-  // Solo mostrar en rutas protegidas
   const isProtectedRoute =
     pathname?.startsWith("/dashboard") ||
     pathname?.startsWith("/editor") ||
@@ -51,10 +49,9 @@ export default function Navigation() {
           <AvatarImage src={session.user.profileImg} alt="@shadcn" />
           <AvatarFallback>{session.user.name?.split('')[0].toUpperCase()}</AvatarFallback>
         </Avatar>
-        {/* Botón para crear contenido */}
         <Button asChild variant="outline" className="space-x-2">
           <Link href="/editor">
-            <Feather className="h-4 w-4" /> {/* Ícono de pluma */}
+            <Feather className="h-4 w-4" />
             <span>Crear contenido</span>
           </Link>
         </Button>

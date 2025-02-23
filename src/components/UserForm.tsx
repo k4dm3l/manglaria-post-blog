@@ -1,4 +1,3 @@
-// src/components/UserForm.tsx
 "use client";
 
 import { useState } from "react";
@@ -9,23 +8,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 interface UserFormProps {
   onSuccess: () => void;
-  user?: { _id: string; name: string; email: string; role: string }; // Incluir el rol
+  user?: { _id: string; name: string; email: string; role: string };
 }
 
 export function UserForm({ onSuccess, user }: UserFormProps) {
   const [name, setName] = useState(user?.name || "");
   const [email, setEmail] = useState(user?.email || "");
-  const [role, setRole] = useState(user?.role || "editor"); // Estado para el rol
+  const [role, setRole] = useState(user?.role || "editor");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
 
-  const isEditMode = !!user; // Determinar si estamos en modo edición
+  const isEditMode = !!user;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validar que las contraseñas coincidan en ambos modos
     if (!isEditMode && password !== confirmPassword) {
       setError("Las contraseñas no coinciden.");
       return;
@@ -35,8 +33,8 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
       const url = isEditMode ? `/api/users/${user._id}` : "/api/users/create";
       const method = isEditMode ? "PUT" : "POST";
       const body = isEditMode
-        ? JSON.stringify({ name, password, role }) // Actualizar nombre, contraseña y rol
-        : JSON.stringify({ name, email, password, role }); // Crear con nombre, email, contraseña y rol
+        ? JSON.stringify({ name, password, role })
+        : JSON.stringify({ name, email, password, role });
 
       const token = localStorage.getItem("token");
       const response = await fetch(url, {
@@ -53,7 +51,7 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
         throw new Error(errorData.error || "Error al procesar la solicitud");
       }
 
-      onSuccess(); // Cerrar el modal y recargar la tabla
+      onSuccess();
     } catch (error: any) {
       setError(error.message || "Error al procesar la solicitud. Inténtalo de nuevo.");
     }
@@ -76,7 +74,7 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          disabled={isEditMode} // Deshabilitar el campo en modo edición
+          disabled={isEditMode}
           required
         />
       </div>
@@ -98,7 +96,7 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          required={!isEditMode} // No requerido en modo edición
+          required={!isEditMode}
         />
       </div>
       {!isEditMode && (

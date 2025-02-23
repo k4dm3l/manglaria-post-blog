@@ -1,4 +1,3 @@
-// src/components/projects-table-columns.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -10,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,10 +45,6 @@ export const columns = (
       );
     },
   },
-  // {
-  //   accessorKey: "description",
-  //   header: "Descripcion",
-  // },
   {
     accessorKey: "author",
     header: () => <div className="text-center">Autor</div>,
@@ -105,7 +100,6 @@ export const columns = (
       }
 
       const handleEdit = () => {
-        // Redirigir a la página de editor con el tipo y el slug del proyecto
         router.push(`/editor/projects/${project._id}`);
       };
 

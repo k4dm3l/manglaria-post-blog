@@ -16,7 +16,7 @@ const octokit = new OctokitWithThrottling({
       retryCount: number
     ) => {
       console.warn(`Rate limit excedido para ${options.method} ${options.url} - Reintentos: ${retryCount}`);
-      return retryCount < 5; // Máximo 5 reintentos
+      return retryCount < 5;
     },
     onSecondaryRateLimit: (
       retryAfter: number,
@@ -25,7 +25,7 @@ const octokit = new OctokitWithThrottling({
       retryCount: number
     ) => {
       console.error(`Secondary rate limit detectado para ${options.method} ${options.url}`);
-      return false; // No reintentar
+      return false;
     }
   }
 });
@@ -38,28 +38,24 @@ export async function uploadMarkdown(formData: FormData) {
 
   const file = formData.get("file") as File;
   const type = formData.get("type") as string;
-  const title = formData.get("title") as string; // Nuevo campo
+  const title = formData.get("title") as string;
 
   if (!file) return { error: "No se proporcionó archivo" };
   if (!["blog", "projects"].includes(type)) return { error: "Tipo inválido" };
   
-  // Validación de extensión .md
   if (!file.name.endsWith(".md")) {
     return { error: "Solo se permiten archivos .md" };
   }
 
-  // Convertir ArrayBuffer a texto
   const content = await file.text();
   
   try {
-    // Obtener referencia actual de develop
     const { data: refData } = await octokit.git.getRef({
       owner,
       repo,
       ref: "heads/develop",
     });
 
-    // Verificar si el archivo existe
     let sha: string | undefined;
     try {
       const { data } = await octokit.repos.getContent({
@@ -73,7 +69,6 @@ export async function uploadMarkdown(formData: FormData) {
       sha = undefined;
     }
 
-    // Subir archivo con usuario asociado
     const { data } = await octokit.repos.createOrUpdateFileContents({
       owner,
       repo,
@@ -104,14 +99,12 @@ export async function mergeDevelopToMain() {
   "use server";
 
   try {
-    // Obtener último commit de develop
     const { data: developStatus } = await octokit.repos.getBranch({
       owner,
       repo,
       branch: "develop",
     });
 
-    // Verificar si hay cambios pendientes
     const { data: comparison } = await octokit.repos.compareCommits({
       owner,
       repo,
@@ -123,7 +116,6 @@ export async function mergeDevelopToMain() {
       return { error: "No hay cambios para fusionar" };
     }
 
-    // Crear merge commit
     const { data } = await octokit.repos.merge({
       owner,
       repo,
@@ -132,7 +124,6 @@ export async function mergeDevelopToMain() {
       commit_message: `Merge automático [${new Date().toISOString()}]`,
     });
 
-    // Actualizar referencia de develop
     await octokit.git.updateRef({
       owner,
       repo,
@@ -151,7 +142,6 @@ export async function mergeDevelopToMain() {
   }
 }
 
-// Obtener lista de posts
 export async function getPosts(type: "blog" | "projects") {
   try {
     const { data } = await octokit.repos.getContent({
@@ -176,7 +166,6 @@ export async function getPosts(type: "blog" | "projects") {
   }
 }
 
-// Obtener contenido de un post específico
 export async function getPostContent(path: string) {
   try {
     const { data } = await octokit.repos.getContent({
@@ -201,7 +190,6 @@ export async function getPostContent(path: string) {
   }
 }
 
-// Actualizar post existente
 export async function updateMarkdownFile(
   path: string,
   content: string,
@@ -229,7 +217,6 @@ export async function updateMarkdownFile(
   }
 }
 
-// Helper para parsear frontmatter
 function parseFrontmatter(content: string) {
   const frontmatter = content.split("---")[1];
   return {

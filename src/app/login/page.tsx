@@ -1,4 +1,3 @@
-// app/login/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -37,7 +36,6 @@ export default function LoginPage() {
         throw new Error(result.error);
       }
 
-      // Forzar recarga completa del contexto de autenticación
       window.location.href = searchParams.get("from") || "/dashboard";
       
     } catch (err) {
@@ -62,12 +60,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="username">Usuario</Label>
               <Input
-                id="email" // Cambiado de 'username'
-                name="email" // Cambiado de 'username'
-                type="email" // Nuevo tipo
+                id="email"
+                name="email"
+                type="email"
                 required
                 disabled={isLoading}
-                placeholder="correo@ejemplo.com" // Nuevo placeholder
+                placeholder="correo@ejemplo.com"
               />
             </div>
 

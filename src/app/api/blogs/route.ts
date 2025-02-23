@@ -1,4 +1,3 @@
-// src/app/api/users/route.ts
 import BlogPost from "@/models/BlogPost";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -30,40 +29,36 @@ export async function GET(request: Request) {
       }
     }
 
-    // Obtener parámetros de búsqueda y paginación
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
-    // Construir el filtro de búsqueda
     const filter: any = 
       search 
       ? { title: { $regex: search, $options: "i" } } 
       : { };
     
-    // Obtener usuarios paginados y filtrados
     const blogPosts = await BlogPost.find(filter)
-      .select("-content") // Excluir el campo "content"
-      .sort({ createdAt: -1 }) // Ordenar por fecha de creación descendente
+      .select("-content")
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .populate({
-        path: 'author', // Campo a poblar
-        select: 'name profileImg', // Selecciona solo el nombre y la imagen de perfil
+        path: 'author',
+        select: 'name profileImg',
       })
       .exec();
 
     const formattedBlogPost = blogPosts.map((project) => ({
-      ...project.toObject(), // Convertir el documento de Mongoose a un objeto plano
+      ...project.toObject(),
       author: {
         name: project.author.name,
-        profileImg: project.author.profileImg || null, // Si no hay imagen, devolver null
+        profileImg: project.author.profileImg || null,
       },
     }));
 
-    // Obtener el total de usuarios que coinciden con el filtro
     const total = await BlogPost.countDocuments(filter);
 
     return NextResponse.json({

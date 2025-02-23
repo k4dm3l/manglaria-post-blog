@@ -7,7 +7,7 @@ export function usePreventLeave(shouldPrevent: boolean) {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (shouldPrevent) {
         e.preventDefault();
-        e.returnValue = ""; // Mensaje requerido para algunos navegadores
+        e.returnValue = "";
       }
     };
 

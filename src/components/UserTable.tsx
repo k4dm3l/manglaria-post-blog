@@ -1,4 +1,3 @@
-// src/components/users-table.tsx
 import { useState, useEffect } from "react";
 import {
   getCoreRowModel,
@@ -18,13 +17,14 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { columns as defaultColumns, BlogPost } from "./BlogPostTableColumns";
+import { columns as defaultColumns, User } from "./UsersTableColumns";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { UserForm } from "./UserForm";
 
-export function BlogPostTable() {
+export function UsersTable() {
   const { data: session } = useSession();
-  const [data, setData] = useState<BlogPost[]>([]);
+  const [data, setData] = useState<User[]>([]);
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -34,38 +34,78 @@ export function BlogPostTable() {
   const [loading, setLoading] = useState(true);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState("");
-  const router = useRouter();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDeleteId, setUserToDeleteId] = useState<string | null>(null);
 
-  const fetchBlogPosts = async (page: number, limit: number, search: string) => {
+  const fetchUsers = async (page: number, limit: number, search: string) => {
     try {
       setLoading(true);
       const response = await fetch(
-        `/api/blogs?page=${page}&limit=${limit}&search=${search}`
+        `/api/users?page=${page}&limit=${limit}&search=${search}&excludeUserId=${session?.user?.id}`
       );
       const result = await response.json();
       setData(result.data);
       setPagination(result.pagination);
     } catch (error) {
-      console.error("Error fetching Blog Posts:", error);
+      console.error("Error fetching users:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBlogPosts(pagination.page, pagination.limit, search);
-  }, [pagination.page, pagination.limit, search]);
+    fetchUsers(pagination.page, pagination.limit, search);
+  }, [pagination.page, pagination.limit, search, session?.user?.id]);
 
-  const handleToggleDelete = async (blogPostId: string, isDeleted: boolean) => {
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleDelete = (userId: string) => {
+    setUserToDeleteId(userId);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!userToDeleteId) return;
+
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`/api/blogs/${blogPostId}/delete`, {
+      const response = await fetch(`/api/users/${userToDeleteId}/delete`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Error al eliminar el usuario");
+      }
+
+      fetchUsers(pagination.page, pagination.limit, search);
+    } catch (error: any) {
+      console.error("Error al eliminar el usuario:", error.message);
+      alert(error.message);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setUserToDeleteId(null);
+    }
+  };
+
+  const handleToggleActive = async (userId: string, active: boolean) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/users/${userId}/active`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ isDeleted }),
+        body: JSON.stringify({ active }),
       });
 
       if (!response.ok) {
@@ -73,16 +113,20 @@ export function BlogPostTable() {
         throw new Error(errorData.error || "Error al actualizar el estado del usuario");
       }
 
-      // Recargar la tabla después de actualizar
-      fetchBlogPosts(pagination.page, pagination.limit, search);
+      fetchUsers(pagination.page, pagination.limit, search);
     } catch (error: any) {
-      console.error("Error al actualizar el estado del blog post:", error.message);
-      alert(error.message); // Mostrar mensaje de error
+      console.error("Error al actualizar el estado del usuario:", error.message);
+      alert(error.message);
     }
   };
 
-  // Pasar handleToggleActive a las columnas
-  const columns = defaultColumns(handleToggleDelete);
+  const handleSuccess = () => {
+    setIsModalOpen(false);
+    setEditingUser(null);
+    fetchUsers(pagination.page, pagination.limit, search);
+  };
+
+  const columns = defaultColumns(handleEdit, handleDelete, handleToggleActive);
 
   const table = useReactTable({
     data,
@@ -120,14 +164,17 @@ export function BlogPostTable() {
     <div className="w-full">
       <div className="flex items-center justify-between py-4">
         <Input
-          placeholder="Buscar por titulo..."
+          placeholder="Buscar por nombre..."
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           className="max-w-sm"
         />
         {session?.user.role === 'admin' && (
-          <Button onClick={() => router.push(`/editor`)}>
-            Crear blog post
+          <Button onClick={() => {
+            setEditingUser(null);
+            setIsModalOpen(true);
+          }}>
+            Crear usuario
           </Button>
         )}
       </div>
@@ -202,6 +249,46 @@ export function BlogPostTable() {
         </div>
       </div>
 
+      {/* Modal para crear/editar usuario */}
+      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingUser ? "Editar usuario" : "Crear nuevo usuario"}
+            </DialogTitle>
+          </DialogHeader>
+          <UserForm
+            onSuccess={handleSuccess}
+            user={editingUser || undefined}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de confirmación para eliminar usuario */}
+      <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>¿Estás seguro de eliminar este usuario?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Esta acción no se puede deshacer. El usuario será eliminado permanentemente.
+          </p>
+          <div className="flex justify-end space-x-2 mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+            >
+              Eliminar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

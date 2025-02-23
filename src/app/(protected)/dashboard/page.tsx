@@ -10,7 +10,6 @@ export default function DashboardPage() {
   const { data: session, status } = useSession();
   const [users, setUsers] = useState([]);
 
-  // Redirección si no está autenticado
   if (status === "unauthenticated") {
     redirect("/login?error=Unauthorized");
   }
