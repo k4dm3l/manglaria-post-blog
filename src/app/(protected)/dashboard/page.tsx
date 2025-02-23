@@ -8,27 +8,10 @@ import { redirect } from "next/navigation";
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
-  // const [users, setUsers] = useState([]);
 
   if (status === "unauthenticated") {
     redirect("/login?error=Unauthorized");
   }
-
-  // useEffect(() => {
-  //   const fetchUsers = async () => {
-  //     const response = await fetch("/api/users");
-  //     const data = await response.json();
-  //     setUsers(data);
-  //   };
-
-  //   if (status === "authenticated") {
-  //     fetchUsers();
-  //   }
-  // }, [status]);
-
-  // if (status === "loading") {
-  //   return <div>Cargando...</div>;
-  // }
 
   return (
     <div className="container mx-auto p-4">
