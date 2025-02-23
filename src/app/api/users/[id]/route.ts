@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import User from "@/models/User";
 import connect from "@/lib/db";
 
@@ -25,7 +26,7 @@ export async function PUT(
     user.role = role;
 
     if (password) {
-      user.password = password;
+      user.password = await bcrypt.hash(password as string, 12);
     }
 
     await user.save();

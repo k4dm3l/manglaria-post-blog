@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import User from "@/models/User";
 import connect from "@/lib/db";
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "El usuario ya existe" }, { status: 400 });
     }
 
-    const user = await User.create({ name, email, password, role });
+    const user = await User.create({ name, email, password: await bcrypt.hash(password as string, 12), role });
     return NextResponse.json({ user }, { status: 201 });
   } catch (err) {
     console.error(err);
