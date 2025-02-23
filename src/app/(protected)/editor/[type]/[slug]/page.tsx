@@ -18,10 +18,8 @@ export default function EditPostPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  // Verificar que el tipo sea "blog" o "projects"
   const type = params.type === "blogs" || params.type === "projects" ? params.type : undefined;
 
-  // Cargar información del proyecto o blog post
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -48,7 +46,6 @@ export default function EditPostPage() {
     loadData();
   }, [type, params.slug]);
 
-  // Función para manejar el guardado de cambios
   const handleSave = async (data: {
     type: "blogs" | "projects";
     title: string;
@@ -99,9 +96,9 @@ export default function EditPostPage() {
       <h2 className="text-2xl font-bold">Editar Contenido</h2>
       {type && initialData && (
         <MarkdownUploader
-          type={type} // Tipo de contenido (blog o projects)
-          initialData={initialData} // Datos iniciales para el modo de edición
-          onSave={handleSave} // Función para manejar el guardado
+          type={type}
+          initialData={initialData}
+          onSave={handleSave}
         />
       )}
     </div>

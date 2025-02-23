@@ -1,4 +1,3 @@
-// src/app/api/users/route.ts
 import User from "@/models/User";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
@@ -30,31 +29,27 @@ export async function GET(request: Request) {
       }
     }
 
-    // Obtener parámetros de búsqueda y paginación
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
-    const excludeUserId = searchParams.get("excludeUserId") || ""; // Nuevo parámetro para excluir al usuario actual
+    const excludeUserId = searchParams.get("excludeUserId") || "";
     const skip = (page - 1) * limit;
 
-    // Construir el filtro de búsqueda
     const filter: any = 
       search 
       ? { name: { $regex: search, $options: "i" }, active: true } 
       : { };
     
     if (excludeUserId) {
-      filter._id = { $ne: excludeUserId }; // Excluir al usuario actual
+      filter._id = { $ne: excludeUserId };
     }
 
-    // Obtener usuarios paginados y filtrados
     const users = await User.find(filter)
       .skip(skip)
       .limit(limit)
       .exec();
 
-    // Obtener el total de usuarios que coinciden con el filtro
     const total = await User.countDocuments(filter);
 
     return NextResponse.json({

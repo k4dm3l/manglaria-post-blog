@@ -1,4 +1,3 @@
-// src/lib/auth.ts
 import jwt from "jsonwebtoken";
 import { getSession } from "next-auth/react";
 

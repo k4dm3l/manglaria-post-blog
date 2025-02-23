@@ -1,7 +1,6 @@
-// src/app/(protected)/users/page.tsx
 "use client";
 
-import { UsersTable } from "@/components/UserTable"; // Importa el componente UsersTable
+import { UsersTable } from "@/components/UserTable";
 
 export default function UsersPage() {
   return (

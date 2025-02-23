@@ -1,4 +1,3 @@
-// src/components/users-table.tsx
 import { useState, useEffect } from "react";
 import {
   getCoreRowModel,
@@ -73,15 +72,13 @@ export function BlogPostTable() {
         throw new Error(errorData.error || "Error al actualizar el estado del usuario");
       }
 
-      // Recargar la tabla después de actualizar
       fetchBlogPosts(pagination.page, pagination.limit, search);
     } catch (error: any) {
       console.error("Error al actualizar el estado del blog post:", error.message);
-      alert(error.message); // Mostrar mensaje de error
+      alert(error.message);
     }
   };
 
-  // Pasar handleToggleActive a las columnas
   const columns = defaultColumns(handleToggleDelete);
 
   const table = useReactTable({

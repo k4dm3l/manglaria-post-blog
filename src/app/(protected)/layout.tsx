@@ -11,7 +11,6 @@ export default function ProtectedLayout({
 }) {
   const { status } = useSession();
 
-  // Mostrar un loader mientras se verifica la sesión
   if (status === "loading") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -20,12 +19,10 @@ export default function ProtectedLayout({
     );
   }
 
-  // Redirigir si no está autenticado
   if (status === "unauthenticated") {
     redirect("/login");
   }
 
-  // Renderizar el layout con Navigation
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />

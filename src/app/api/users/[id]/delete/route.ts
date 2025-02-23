@@ -1,4 +1,3 @@
-// src/app/api/users/[id]/route.ts (DELETE)
 import { NextResponse } from "next/server";
 import User from "@/models/User";
 import connect from "@/lib/db";
@@ -19,7 +18,6 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
-    // No permitir eliminar a otro admin
     if (userToDelete.role === "admin") {
       return NextResponse.json(
         { error: "No puedes eliminar a otro administrador" },

@@ -1,4 +1,3 @@
-// src/components/users-table-columns.tsx
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
@@ -13,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useSession } from "next-auth/react";
-import { Switch } from "@/components/ui/switch"; // Importar el componente Switch
+import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge"
 
 export type User = {
@@ -21,13 +20,13 @@ export type User = {
   name: string;
   email: string;
   role: string;
-  active: boolean; // Agregar el campo active
+  active: boolean;
 };
 
 export const columns = (
   handleEdit: (user: User) => void,
   handleDelete: (userId: string) => void,
-  handleToggleActive: (userId: string, active: boolean) => void // Función para manejar el toggle
+  handleToggleActive: (userId: string, active: boolean) => void
 ): ColumnDef<User>[] => [
   {
     accessorKey: "name",
@@ -55,10 +54,9 @@ export const columns = (
     accessorKey: "active",
     header: "Estado",
     cell: ({ row }) => {
-      const { data: session } = useSession(); // Obtener la sesión del usuario actual
+      const { data: session } = useSession();
       const user = row.original;
 
-      // Mostrar el toggle solo si el usuario actual es admin
       if (session?.user?.role === "admin") {
         return (
           <Switch
@@ -68,7 +66,6 @@ export const columns = (
         );
       }
 
-      // Si no es admin, mostrar un texto con el estado
       return (
         <Badge variant={user.active ? "default" : "destructive"}>
           {user.active ? "Activo" : "Inactivo"}

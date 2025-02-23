@@ -1,4 +1,3 @@
-// src/components/projects-table-columns.tsx
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -101,7 +100,6 @@ export const columns = (
       }
 
       const handleEdit = () => {
-        // Redirigir a la página de editor con el tipo y el slug del proyecto
         router.push(`/editor/blogs/${blogPost._id}`);
       };
 

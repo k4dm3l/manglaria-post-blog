@@ -1,4 +1,3 @@
-// src/app/(protected)/editor/page.tsx
 import { auth } from "../../auth";
 import { redirect } from "next/navigation";
 import MarkdownUploader from "@/components/MarkdownUploader";

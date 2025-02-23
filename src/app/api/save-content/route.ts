@@ -1,4 +1,3 @@
-// src/app/api/save-content/route.ts
 import { NextResponse } from "next/server";
 import Project from "@/models/Project";
 import BlogPost from "@/models/BlogPost";
@@ -15,7 +14,7 @@ export async function POST(req: Request) {
         title,
         excerpt: description,
         content,
-        image, // Guardar la URL de la imagen
+        image,
         author,
       });
       await newBlogPost.save();
@@ -25,7 +24,7 @@ export async function POST(req: Request) {
         title,
         description,
         content,
-        image, // Guardar la URL de la imagen
+        image,
         author,
       });
       await newProject.save();

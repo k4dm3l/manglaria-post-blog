@@ -1,4 +1,3 @@
-// src/components/users-table.tsx
 import { useState, useEffect } from "react";
 import {
   getCoreRowModel,
@@ -37,8 +36,8 @@ export function UsersTable() {
   const [search, setSearch] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false); // Estado para el modal de confirmación
-  const [userToDeleteId, setUserToDeleteId] = useState<string | null>(null); // Estado para el ID del usuario a eliminar
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [userToDeleteId, setUserToDeleteId] = useState<string | null>(null);
 
   const fetchUsers = async (page: number, limit: number, search: string) => {
     try {
@@ -66,8 +65,8 @@ export function UsersTable() {
   };
 
   const handleDelete = (userId: string) => {
-    setUserToDeleteId(userId); // Establecer el ID del usuario a eliminar
-    setIsDeleteModalOpen(true); // Abrir el modal de confirmación
+    setUserToDeleteId(userId);
+    setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -87,14 +86,13 @@ export function UsersTable() {
         throw new Error(errorData.error || "Error al eliminar el usuario");
       }
 
-      // Recargar la tabla después de eliminar
       fetchUsers(pagination.page, pagination.limit, search);
     } catch (error: any) {
       console.error("Error al eliminar el usuario:", error.message);
-      alert(error.message); // Mostrar mensaje de error
+      alert(error.message);
     } finally {
-      setIsDeleteModalOpen(false); // Cerrar el modal de confirmación
-      setUserToDeleteId(null); // Limpiar el ID del usuario a eliminar
+      setIsDeleteModalOpen(false);
+      setUserToDeleteId(null);
     }
   };
 
@@ -115,11 +113,10 @@ export function UsersTable() {
         throw new Error(errorData.error || "Error al actualizar el estado del usuario");
       }
 
-      // Recargar la tabla después de actualizar
       fetchUsers(pagination.page, pagination.limit, search);
     } catch (error: any) {
       console.error("Error al actualizar el estado del usuario:", error.message);
-      alert(error.message); // Mostrar mensaje de error
+      alert(error.message);
     }
   };
 
@@ -129,7 +126,6 @@ export function UsersTable() {
     fetchUsers(pagination.page, pagination.limit, search);
   };
 
-  // Pasar handleToggleActive a las columnas
   const columns = defaultColumns(handleEdit, handleDelete, handleToggleActive);
 
   const table = useReactTable({
