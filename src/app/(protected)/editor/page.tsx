@@ -1,7 +1,7 @@
 // src/app/(protected)/editor/page.tsx
 import { auth } from "../../auth";
 import { redirect } from "next/navigation";
-import MarkdownUploader from "../../components/MarkdownUploader";
+import MarkdownUploader from "@/components/MarkdownUploader";
 
 export default async function EditorPage() {
   const session = await auth();

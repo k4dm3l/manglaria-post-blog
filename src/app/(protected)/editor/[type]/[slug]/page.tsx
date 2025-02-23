@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import MarkdownUploader from "../../../../components/MarkdownUploader";
+import MarkdownUploader from "@/components/MarkdownUploader";
 
 export default function EditPostPage() {
   const router = useRouter();

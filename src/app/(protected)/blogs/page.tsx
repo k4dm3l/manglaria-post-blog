@@ -1,7 +1,7 @@
 // src/app/(protected)/users/page.tsx
 "use client";
 
-import { BlogPostTable } from "../../components/BlogPostTable"; // Importa el componente UsersTable
+import { BlogPostTable } from "@/components/BlogPostTable"; // Importa el componente UsersTable
 
 export default function BlogsPage() {
   return (

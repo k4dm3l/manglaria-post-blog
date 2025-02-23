@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
-import Navigation from "../components/Navigation";
+import Navigation from "@/components/Navigation";
 
 export default function ProtectedLayout({
   children,
