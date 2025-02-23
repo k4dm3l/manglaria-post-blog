@@ -1,2 +1,5 @@
-export { GET, POST } from "../../../auth";
-export const runtime = "edge"; // Solo si usas Vercel
+import NextAuth from "next-auth";
+import { authOptions } from "./auth";
+
+const handler = NextAuth(authOptions);
+export { handler as GET, handler as POST };
