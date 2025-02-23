@@ -4,18 +4,19 @@ import connect from "@/lib/db";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   await connect();
 
   try {
     const { isDeleted } = await req.json();
+    const { id } = await params;
 
-    if (!params.id) {
+    if (!id) {
       return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
     }
 
-    const project = await Project.findById(params.id);
+    const project = await Project.findById(id);
     if (!project) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }

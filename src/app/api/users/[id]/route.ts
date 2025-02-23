@@ -4,17 +4,18 @@ import connect from "@/lib/db";
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   await connect();
+  const { id } = await params;
 
   try {
-    if (!params.id) {
+    if (!id) {
       return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
     }
 
     const { name, password, role } = await req.json();
-    const user = await User.findById(params.id);
+    const user = await User.findById(id);
 
     if (!user) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
