@@ -14,22 +14,21 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Limpiar errores de la URL al cargar
   useEffect(() => {
     if (searchParams.get("error")) {
-      router.replace("/login"); // Elimina el query param
       setError("Acceso no autorizado. Inicia sesión nuevamente.");
+      router.replace("/login");
     }
   }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(""); // Resetear error local
-    
+    setError("");
+
     try {
       const result = await signIn("credentials", {
-        username: e.currentTarget.username.value,
+        email: e.currentTarget.email.value,
         password: e.currentTarget.password.value,
         redirect: false,
       });
@@ -38,8 +37,9 @@ export default function LoginPage() {
         throw new Error(result.error);
       }
 
-      // Redirección forzada sin parámetros
-      window.location.href = "/editor";
+      // Forzar recarga completa del contexto de autenticación
+      window.location.href = searchParams.get("from") || "/dashboard";
+      
     } catch (err) {
       setError("Credenciales inválidas. Intenta nuevamente.");
     } finally {
@@ -62,12 +62,12 @@ export default function LoginPage() {
             <div className="space-y-2">
               <Label htmlFor="username">Usuario</Label>
               <Input
-                id="username"
-                name="username"
-                type="text"
+                id="email" // Cambiado de 'username'
+                name="email" // Cambiado de 'username'
+                type="email" // Nuevo tipo
                 required
                 disabled={isLoading}
-                placeholder="username"
+                placeholder="correo@ejemplo.com" // Nuevo placeholder
               />
             </div>
 

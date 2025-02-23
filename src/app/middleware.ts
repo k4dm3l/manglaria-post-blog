@@ -1,37 +1,32 @@
-import { auth } from "./auth";
-import { NextResponse } from "next/server";
+// src/middleware.ts
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-export default auth((req) => {
-  const isAuthenticated = !!req.auth;
-  const { pathname } = req.nextUrl;
+export async function middleware(request: NextRequest) {
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET!,
+    cookieName: 'next-auth.session-token'
+  });
 
-  // Permitir acceso público a la API de autenticación
-  if (pathname.startsWith("/api/auth")) return NextResponse.next();
+  const { pathname } = request.nextUrl;
 
-  // Redirigir usuarios autenticados que intentan acceder al login
-  if (pathname === "/login" && isAuthenticated) {
-    return NextResponse.redirect(new URL("/editor", req.url));
+  if (pathname === "/") {
+    if (token) {
+      return NextResponse.redirect(new URL("/dashboard", request.url));
+    } else {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
 
-  // Proteger rutas bajo /editor
-  if (pathname.startsWith("/editor") && !isAuthenticated) {
-    const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.delete("error"); // Limpiar parámetros de error
-    return NextResponse.redirect(loginUrl);
-  }
+  // Rutas protegidas
+  const protectedPaths = ["/dashboard", "/editor", "/users", "/blogs", "/projects"];
 
-  // Proteger rutas de edición específicas
-  if (pathname.match(/^\/editor\/(blog|projects)\/[^/]+$/) && !isAuthenticated) {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // Redirigir a login si no está autenticado
+  if (!token && protectedPaths.some(path => pathname.startsWith(path))) {
+    return NextResponse.redirect(new URL(`/login?from=${pathname}`, request.url));
   }
 
   return NextResponse.next();
-});
-
-export const config = {
-  matcher: [
-    "/editor/:path*",
-    "/login",
-    "/((?!api|_next/static|_next/image|favicon.ico).*)"
-  ], 
-};
+}

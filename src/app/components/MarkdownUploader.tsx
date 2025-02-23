@@ -1,30 +1,49 @@
 "use client";
 
 import { useState } from "react";
-import { uploadMarkdown, mergeDevelopToMain } from "@/app/actions";
+import { useSession } from "next-auth/react";
 import MDEditor, { commands } from "@uiw/react-md-editor";
 import { Button } from "@/components/ui/button";
-import { Card, CardTitle, CardHeader, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import { Input } from '@/components/ui/input';
+import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 
-export default function MarkdownUploader() {
-  const [message, setMessage] = useState("");
-  const [type, setType] = useState("blog");
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [content, setContent] = useState("");
-  const [contentError, setContentError] = useState("");
-
-  const getCurrentTimestamp = () => {
-    const date = new Date();
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    return `${day}-${month}-${year}`;
+type MarkdownUploaderProps = {
+  type?: "blogs" | "projects"; // Tipo de contenido (opcional, por defecto "blog")
+  initialData?: {
+    // Datos iniciales para el modo de edición
+    _id?: string;
+    title?: string;
+    description?: string;
+    content?: string;
+    image?: string;
   };
+  onSave?: (data: {
+    type: "blogs" | "projects";
+    title: string;
+    description: string;
+    content: string;
+    image: string;
+    author: string;
+  }) => Promise<void>; // Función para manejar el guardado
+};
+
+export default function MarkdownUploader({
+  type: initialType = "blogs",
+  initialData,
+  onSave,
+}: MarkdownUploaderProps) {
+  const { data: session } = useSession();
+  const [message, setMessage] = useState("");
+  const [type, setType] = useState(initialType);
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [description, setDescription] = useState(initialData?.description || "");
+  const [content, setContent] = useState(initialData?.content || "");
+  const [contentError, setContentError] = useState("");
+  const [image, setImage] = useState(initialData?.image || "");
+  const [newImage, setNewImage] = useState("");
 
   const validateContent = () => {
     const isValid = content.trim().length > 100;
@@ -32,9 +51,39 @@ export default function MarkdownUploader() {
     return isValid;
   };
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        const base64data = reader.result as string;
+        try {
+          const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ data: base64data }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setNewImage(data.url); // Guarda la URL de la nueva imagen
+          } else {
+            setMessage('Error al subir la imagen');
+          }
+        } catch (error) {
+          setMessage('Error al subir la imagen');
+          console.error(error);
+        }
+      };
+    }
+  };
+
   const handleUpload = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    
+
     if (!title.trim()) {
       setMessage("El título es obligatorio");
       return;
@@ -47,57 +96,71 @@ export default function MarkdownUploader() {
 
     if (!validateContent()) return;
 
-    const timestamp = getCurrentTimestamp();
-    const timestampName = Date.now();
-    
-    // Crear contenido con formato específico
-    const fullContent = `---
-title: ${title}
-author: Corporación Manglaria
-excerpt: ${description}
-timestamp: ${timestamp}
----
+    const finalImage = newImage || image; // Usar la nueva imagen si está disponible, de lo contrario, usar la imagen actual
 
-${content}`;
+    if (!finalImage) {
+      setMessage("Debes subir una imagen");
+      return;
+    }
 
-    const formData = new FormData();
-    
-    // Formatear nombre de archivo
-    const formattedTitle = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
+    try {
+      const data = {
+        type,
+        title,
+        description,
+        content,
+        image: finalImage,
+        author: session?.user?.id || "",
+      };
 
-    const fileName = `${timestampName}_${formattedTitle}.md`;
+      if (onSave) {
+        await onSave(data); // Usar la función onSave si está definida
+      } else {
+        const response = await fetch("/api/save-content", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
 
-    const markdownFile = new File([fullContent], fileName, {
-      type: "text/markdown",
-    });
+        const result = await response.json();
 
-    formData.append("type", type);
-    formData.append("title", title);
-    formData.append("file", markdownFile);
-
-    const response = await uploadMarkdown(formData);
-    setMessage(response.success || response.error || "Operación realizada sin mensaje.");
-  };
-
-  const handleMerge = async () => {
-    const response = await mergeDevelopToMain();
-    setMessage(response.success || response.error || "Operación realizada sin mensaje.");
+        if (response.ok) {
+          setMessage("Contenido guardado exitosamente");
+          // Limpiar el formulario después de guardar
+          setTitle("");
+          setDescription("");
+          setContent("");
+          setImage("");
+          setNewImage("");
+        } else {
+          setMessage(result.error || "Error al guardar el contenido");
+        }
+      }
+    } catch (error) {
+      setMessage("Error al guardar el contenido");
+      console.error(error);
+    }
   };
 
   return (
     <Card className="max-w-3xl mx-auto">
       <CardHeader>
-        <CardTitle className="text-2xl">Editor de Contenido</CardTitle>
+        <CardTitle className="text-2xl">
+          {initialData ? "Editar Contenido" : "Crear Nuevo Contenido"}
+        </CardTitle>
       </CardHeader>
-      
+
       <CardContent>
         <form onSubmit={handleUpload} className="space-y-6">
           <div className="space-y-3">
             <Label>Tipo de contenido</Label>
-            <Select value={type} onValueChange={setType}>
+            <Select
+              value={type}
+              onValueChange={(value: string) => setType(value as "blogs" | "projects")}
+              disabled={!!initialData}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Selecciona tipo" />
               </SelectTrigger>
@@ -128,6 +191,23 @@ ${content}`;
           </div>
 
           <div className="space-y-3">
+            <Label>Imagen</Label>
+            <Input
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            {(newImage || image) && (
+              <img
+                src={newImage || image}
+                alt="Preview"
+                className="mt-2 rounded-lg"
+                style={{ maxWidth: '100%' }}
+              />
+            )}
+          </div>
+
+          <div className="space-y-3">
             <Label>Contenido</Label>
             <div className="overflow-hidden rounded-lg border">
               <MDEditor
@@ -147,15 +227,7 @@ ${content}`;
 
           <div className="flex gap-4">
             <Button type="submit" className="bg-primary hover:bg-primary/90">
-              Subir a develop
-            </Button>
-            
-            <Button
-              type="button"
-              onClick={handleMerge}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Merge a master
+              {initialData ? "Guardar Cambios" : "Guardar contenido"}
             </Button>
           </div>
         </form>
