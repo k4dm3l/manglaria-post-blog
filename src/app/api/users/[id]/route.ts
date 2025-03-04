@@ -15,7 +15,7 @@ export async function PUT(
       return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
     }
 
-    const { name, password, role } = await req.json();
+    const { name, password, role, profileImg } = await req.json();
     const user = await User.findById(id);
 
     if (!user) {
@@ -24,6 +24,7 @@ export async function PUT(
 
     user.name = name;
     user.role = role;
+    user.profileImg = profileImg;
 
     if (password) {
       user.password = await bcrypt.hash(password as string, 12);
