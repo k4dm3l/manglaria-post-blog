@@ -1,3 +1,4 @@
+import { generateSlug } from "@/lib/utils";
 import mongoose, { Document } from "mongoose";
 
 export interface IProject extends Document {
@@ -38,7 +39,7 @@ const projectSchema = new mongoose.Schema(
 
 projectSchema.pre("save", function (next) {
   if (!this.slug) {
-    this.slug = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}-${this.title.split(' ').join('-')}`.toLowerCase();
+    this.slug = generateSlug(this.title);
   }
   next();
 });
