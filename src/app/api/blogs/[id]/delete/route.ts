@@ -19,7 +19,7 @@ export async function PATCH(
       );
     }
 
-    const blogPost = await BlogPost.findOne({ slug: id });
+    const blogPost = await BlogPost.findById(id);
     if (!blogPost) {
       return NextResponse.json(
         { error: "Usuario no encontrado" },
