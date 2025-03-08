@@ -101,7 +101,7 @@ export const columns = (
       }
 
       const handleEdit = () => {
-        router.push(`/editor/blogs/${blogPost.slug}`);
+        router.push(`/editor/blogs/${blogPost._id}`);
       };
 
       return (

@@ -24,7 +24,6 @@ export default function EditPostPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log({ params });
         if (!type || !params.slug) {
           throw new Error("Tipo o slug no válido");
         }
@@ -36,7 +35,7 @@ export default function EditPostPage() {
           throw new Error(data.error || "Error al cargar los datos");
         }
 
-        setInitialData(data);
+        setInitialData({ ...data, description: data.excerpt });
       } catch (err) {
         setError("Error cargando los datos");
         console.error(err);
