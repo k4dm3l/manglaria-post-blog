@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { generateSlug } from "@/lib/utils";
 
 type MarkdownUploaderProps = {
   type?: "blogs" | "projects";
@@ -104,7 +105,7 @@ export default function MarkdownUploader({
       return;
     }
 
-    const slug: string = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}-${title.split(' ').join('-')}`.toLowerCase();
+    const slug: string = generateSlug(title);
 
     try {
       const data = {

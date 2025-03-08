@@ -1,3 +1,4 @@
+import { generateSlug } from "@/lib/utils";
 import mongoose, { Document } from "mongoose";
 
 export interface IBlogPost extends Document {
@@ -27,7 +28,7 @@ const blogPostSchema = new mongoose.Schema(
 
 blogPostSchema.pre("save", function (next) {
   if (!this.slug) {
-    this.slug = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}-${this.title.split(' ').join('-')}`.toLowerCase();
+    this.slug = generateSlug(this.title);
   }
   next();
 });
