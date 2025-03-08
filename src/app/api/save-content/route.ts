@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   await connect();
 
   try {
-    const { type, title, description, content, image, author } = await req.json();
+    const { type, title, description, content, image, author, slug } = await req.json();
 
     if (type === "blog") {
       const newBlogPost = new BlogPost({
@@ -16,6 +16,7 @@ export async function POST(req: Request) {
         content,
         image,
         author,
+        slug,
       });
       await newBlogPost.save();
       return NextResponse.json({ message: "Entrada de blog guardada exitosamente" });
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
         content,
         image,
         author,
+        slug,
       });
       await newProject.save();
       return NextResponse.json({ message: "Proyecto guardado exitosamente" });

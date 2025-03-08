@@ -30,6 +30,7 @@ export type BlogPost = {
     profileImg: string;
   };
   isDeleted: boolean;
+  slug: string;
 }
 
 export const columns = (
@@ -100,7 +101,7 @@ export const columns = (
       }
 
       const handleEdit = () => {
-        router.push(`/editor/blogs/${blogPost._id}`);
+        router.push(`/editor/blogs/${blogPost.slug}`);
       };
 
       return (

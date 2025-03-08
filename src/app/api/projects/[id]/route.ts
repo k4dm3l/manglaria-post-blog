@@ -10,7 +10,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const project = await Project.findById(id).exec();
+    const project = await Project.findOne({ slug: id }).exec();
 
     if (!project) {
       return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });

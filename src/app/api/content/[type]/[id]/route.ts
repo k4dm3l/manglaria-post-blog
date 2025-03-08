@@ -34,20 +34,13 @@ export async function GET(
       );
     }
 
-    if (!mongoose.Types.ObjectId.isValid(id)) {
-      return NextResponse.json(
-        { error: 'Invalid ID' },
-        { status: 400 }
-      );
-    }
-
     await connect();
 
     const Model = type === 'blog' ? BlogPost : Project;
     const populateOptions = { path: 'author', select: 'name profileImg' };
 
     // 4. Buscar documento completo
-    const document = await Model.findById(id)
+    const document = await Model.findOne({ slug: id })
       .populate(populateOptions)
       .select('-__v -isDeleted')
       .lean();

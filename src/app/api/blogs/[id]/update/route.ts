@@ -16,7 +16,7 @@ export async function PUT(
     }
 
     const { title, description, content, image } = await req.json();
-    const blogPost = await BlogPost.findById(id).exec();
+    const blogPost = await BlogPost.findOne({ slug: id }).exec();
 
     if (!blogPost) {
       return NextResponse.json({ error: "Blog no encontrado" }, { status: 404 });

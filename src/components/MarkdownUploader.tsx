@@ -18,6 +18,7 @@ type MarkdownUploaderProps = {
     description?: string;
     content?: string;
     image?: string;
+    slug?: string;
   };
   onSave?: (data: {
     type: "blogs" | "projects";
@@ -26,6 +27,7 @@ type MarkdownUploaderProps = {
     content: string;
     image: string;
     author: string;
+    slug: string;
   }) => Promise<void>;
 };
 
@@ -102,6 +104,8 @@ export default function MarkdownUploader({
       return;
     }
 
+    const slug: string = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}-${title.split(' ').join('-')}`.toLowerCase();
+
     try {
       const data = {
         type,
@@ -110,6 +114,7 @@ export default function MarkdownUploader({
         content,
         image: finalImage,
         author: session?.user?.id || "",
+        slug,
       };
 
       if (onSave) {

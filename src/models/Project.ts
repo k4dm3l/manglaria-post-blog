@@ -6,6 +6,7 @@ export interface IProject extends Document {
   content: string;
   author: mongoose.Schema.Types.ObjectId;
   image: string;
+  slug: string;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -30,8 +31,16 @@ const projectSchema = new mongoose.Schema(
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     isDeleted: { type: Boolean, default: false },
     image: { type: String },
+    slug: { type: String, required: true, unique: true },
   },
   { timestamps: true }
 );
+
+projectSchema.pre("save", function (next) {
+  if (!this.slug) {
+    this.slug = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}-${this.title.split(' ').join('-')}`.toLowerCase();
+  }
+  next();
+});
 
 export default mongoose.models.Project || mongoose.model<IProject>("Project", projectSchema);

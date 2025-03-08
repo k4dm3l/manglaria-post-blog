@@ -16,7 +16,7 @@ export async function PATCH(
       return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
     }
 
-    const project = await Project.findById(id);
+    const project = await Project.findOne({ slug: id });
     if (!project) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }

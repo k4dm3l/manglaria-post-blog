@@ -10,7 +10,7 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const blogPost = await BlogPost.findById(id).exec();
+    const blogPost = await BlogPost.findOne({ slug: id }).exec();
 
     if (!blogPost) {
       return NextResponse.json({ error: "Blog no encontrado" }, { status: 404 });

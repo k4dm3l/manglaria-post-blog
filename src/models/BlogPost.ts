@@ -7,6 +7,7 @@ export interface IBlogPost extends Document {
   author: mongoose.Schema.Types.ObjectId;
   isDeleted: boolean;
   image: string;
+  slug: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -19,8 +20,16 @@ const blogPostSchema = new mongoose.Schema(
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     image: { type: String },
     isDeleted: { type: Boolean, default: false },
+    slug: { type: String, required: true, unique: true }
   },
   { timestamps: true }
 );
+
+blogPostSchema.pre("save", function (next) {
+  if (!this.slug) {
+    this.slug = `${new Date().getFullYear()}-${new Date().getMonth() + 1}-${new Date().getDate()}-${this.title.split(' ').join('-')}`.toLowerCase();
+  }
+  next();
+});
 
 export default mongoose.models.BlogPost || mongoose.model<IBlogPost>("BlogPost", blogPostSchema);

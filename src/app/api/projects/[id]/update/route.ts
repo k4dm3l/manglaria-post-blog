@@ -15,7 +15,7 @@ export async function PUT(
     }
 
     const { title, description, content, image } = await req.json();
-    const project = await Project.findById(id).exec();
+    const project = await Project.findOne({ slug: id }).exec();
 
     if (!project) {
       return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });
