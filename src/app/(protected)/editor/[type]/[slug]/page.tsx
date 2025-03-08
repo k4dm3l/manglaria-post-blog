@@ -14,6 +14,7 @@ export default function EditPostPage() {
     description?: string;
     content?: string;
     image?: string;
+    slug?: string;
   } | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,6 +24,7 @@ export default function EditPostPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        console.log({ params });
         if (!type || !params.slug) {
           throw new Error("Tipo o slug no válido");
         }
@@ -53,6 +55,7 @@ export default function EditPostPage() {
     content: string;
     image: string;
     author: string;
+    slug: string;
   }) => {
     try {
       if (!type || !params.slug) {
