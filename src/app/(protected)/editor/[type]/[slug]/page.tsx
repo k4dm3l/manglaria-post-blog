@@ -35,7 +35,7 @@ export default function EditPostPage() {
           throw new Error(data.error || "Error al cargar los datos");
         }
 
-        setInitialData({ ...data, description: data.excerpt });
+        setInitialData({ ...data, description: data.description || data.excerpt });
       } catch (err) {
         setError("Error cargando los datos");
         console.error(err);

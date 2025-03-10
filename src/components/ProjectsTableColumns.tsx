@@ -30,6 +30,7 @@ export type Project = {
     profileImg: string;
   };
   isDeleted: boolean;
+  slug?: string;
 }
 
 export const columns = (
