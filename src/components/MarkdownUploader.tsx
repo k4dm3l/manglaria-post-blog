@@ -17,6 +17,7 @@ type MarkdownUploaderProps = {
     _id?: string;
     title?: string;
     description?: string;
+    excerpt?: string;
     content?: string;
     image?: string;
     slug?: string;
@@ -41,7 +42,7 @@ export default function MarkdownUploader({
   const [message, setMessage] = useState("");
   const [type, setType] = useState(initialType);
   const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(initialData?.description || "");
+  const [description, setDescription] = useState(initialData?.description || initialData?.excerpt || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [contentError, setContentError] = useState("");
   const [image, setImage] = useState(initialData?.image || "");

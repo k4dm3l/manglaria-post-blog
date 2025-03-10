@@ -30,7 +30,7 @@ export type BlogPost = {
     profileImg: string;
   };
   isDeleted: boolean;
-  slug: string;
+  slug?: string;
 }
 
 export const columns = (
