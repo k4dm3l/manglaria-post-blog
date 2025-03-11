@@ -45,7 +45,7 @@ export const authOptions: NextAuthOptions = {
         domain: 
           process.env.NODE_ENV === "development" 
             ? "localhost" 
-            : "manglaria-post-blog.vercel.app" // Usa el dominio de Vercel SIN el punto inicial
+            : "cms.corporacionmanglaria.org" // Usa el dominio de Vercel SIN el punto inicial
       }
     }
   },
