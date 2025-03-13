@@ -3,7 +3,7 @@ import mongoose, { Document } from "mongoose";
 
 export interface IBlogPost extends Document {
   title: string;
-  excerpt: string;
+  description: string;
   content: string;
   author: mongoose.Schema.Types.ObjectId;
   isDeleted: boolean;
@@ -16,7 +16,7 @@ export interface IBlogPost extends Document {
 const blogPostSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, unique: true },
-    excerpt: { type: String, required: true },
+    description: { type: String, required: true },
     content: { type: String, required: true },
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     image: { type: String },
