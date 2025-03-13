@@ -17,7 +17,6 @@ type MarkdownUploaderProps = {
     _id?: string;
     title?: string;
     description?: string;
-    excerpt?: string;
     content?: string;
     image?: string;
     slug?: string;
@@ -42,7 +41,7 @@ export default function MarkdownUploader({
   const [message, setMessage] = useState("");
   const [type, setType] = useState(initialType);
   const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(initialData?.description || initialData?.excerpt || "");
+  const [description, setDescription] = useState(initialData?.description || "");
   const [content, setContent] = useState(initialData?.content || "");
   const [contentError, setContentError] = useState("");
   const [image, setImage] = useState(initialData?.image || "");
@@ -190,7 +189,7 @@ export default function MarkdownUploader({
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción breve para el excerpt..."
+              placeholder="Descripción breve..."
               className="min-h-[100px]"
             />
           </div>

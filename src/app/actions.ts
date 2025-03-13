@@ -176,11 +176,11 @@ export async function getPostContent(path: string) {
     });
 
     const content = Buffer.from((data as any).content, "base64").toString("utf8");
-    const { title, excerpt } = parseFrontmatter(content);
+    const { title, description } = parseFrontmatter(content);
     
     return {
       title,
-      excerpt,
+      description,
       content: content.split("---")[2].trim(),
       sha: (data as any).sha
     };
@@ -221,6 +221,6 @@ function parseFrontmatter(content: string) {
   const frontmatter = content.split("---")[1];
   return {
     title: frontmatter.match(/title: (.*)/)?.[1]?.trim() || "",
-    excerpt: frontmatter.match(/excerpt: (.*)/)?.[1]?.trim() || ""
+    description: frontmatter.match(/description: (.*)/)?.[1]?.trim() || ""
   };
 }

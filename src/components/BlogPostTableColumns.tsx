@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 export type BlogPost = {
   _id: string;
   title: string;
-  excerpt: string;
+  description: string;
   author: {
     name: string;
     profileImg: string;

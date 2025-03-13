@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     if (type === "blog") {
       const newBlogPost = new BlogPost({
         title,
-        excerpt: description,
+        description,
         content,
         image,
         author,
