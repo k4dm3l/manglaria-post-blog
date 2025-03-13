@@ -32,7 +32,7 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET!,
   session: {
     strategy: "jwt",
-    maxAge: 30 * 24 * 60 * 60
+    maxAge: 8 * 60 * 60
   },
   cookies: {
     sessionToken: {
@@ -45,7 +45,8 @@ export const authOptions: NextAuthOptions = {
         domain: 
           process.env.NODE_ENV === "development" 
             ? "localhost" 
-            : "cms.corporacionmanglaria.org" // Usa el dominio de Vercel SIN el punto inicial
+            : process.env.NEXTAUTH_URL,
+        maxAge: 8 * 60 * 60
       }
     }
   },
