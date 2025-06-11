@@ -1,39 +1,87 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import User from "@/models/User";
+import { getServerSession } from "next-auth";
+import { authOptions } from "../../auth/[...nextauth]/route";
 import connect from "@/lib/db";
+import { User } from "@/models/User";
+import { Model } from "mongoose";
+import { IUser } from "@/models/User";
+import { z } from "zod";
+
+// Add type for session user
+type SessionUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+};
+
+// Update validation schema for partial updates
+const updateUserSchema = z.object({
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres").optional(),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres").optional(),
+  role: z.enum(["admin", "editor"]).optional(),
+  profileImg: z.string().url("URL de imagen inválida").optional().or(z.literal("")),
+});
 
 export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> }
+  request: Request,
+  { params }: { params: { id: string } }
 ) {
-  await connect();
-  const { id } = await params;
-
   try {
-    if (!id) {
-      return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    const { name, password, role, profileImg } = await req.json();
-    const user = await User.findById(id);
-
-    if (!user) {
-      return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
+    const user = session.user as SessionUser;
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Admin access required" },
+        { status: 403 }
+      );
     }
 
-    user.name = name;
-    user.role = role;
-    user.profileImg = profileImg;
-
-    if (password) {
-      user.password = await bcrypt.hash(password as string, 12);
+    const body = await request.json();
+    const validationResult = updateUserSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          error: "Validation error",
+          details: validationResult.error.errors
+        },
+        { status: 400 }
+      );
     }
 
-    await user.save();
-    return NextResponse.json({ message: "Usuario actualizado exitosamente" });
+    const userData = validationResult.data;
+    await connect();
+
+    const updatedUser = await (User as Model<IUser>).findByIdAndUpdate(
+      params.id,
+      { $set: userData },
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      data: updatedUser,
+      message: "User updated successfully",
+    });
   } catch (error) {
-    console.error("Error al actualizar el usuario:", error);
-    return NextResponse.json({ error: "Error al actualizar el usuario" }, { status: 500 });
+    console.error("Error in PUT /api/users/[id]:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }

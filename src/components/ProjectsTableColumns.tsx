@@ -56,7 +56,7 @@ export const columns = (
           <Avatar>
             <AvatarImage src={project.author.profileImg} alt={project.author.name} />
             <AvatarFallback>
-              {project.author.name?.split('')[0].toUpperCase()} {/* Mostrar la primera letra del nombre */}
+              {project.author?.name?.[0]?.toUpperCase() ?? '?'}
             </AvatarFallback>
           </Avatar>
           <Badge variant="outline" className="text-xs"> {/* Reducir el tamaño de la letra */}
@@ -114,11 +114,6 @@ export const columns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(project._id)}
-            >
-              Copiar ID
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleEdit}>
               Editar

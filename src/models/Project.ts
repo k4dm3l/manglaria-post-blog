@@ -2,7 +2,7 @@ import { generateSlug } from "@/lib/utils";
 import mongoose, { Document } from "mongoose";
 
 export interface IProject extends Document {
-  name: string;
+  title: string;
   description: string;
   content: string;
   author: mongoose.Schema.Types.ObjectId;

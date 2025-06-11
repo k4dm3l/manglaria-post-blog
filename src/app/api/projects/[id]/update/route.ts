@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import Project from "@/models/Project";
+import Project, { IProject } from "@/models/Project";
 import connect from "@/lib/db";
+import { Model } from "mongoose";
 
 export async function PUT(
   req: Request,
@@ -15,16 +16,17 @@ export async function PUT(
     }
 
     const { title, description, content, image } = await req.json();
-    const project = await Project.findById(id).exec();
+    const ProjectModel = Project as Model<IProject>;
+    const project = await ProjectModel.findById(id).exec();
 
     if (!project) {
       return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });
     }
 
-    project.title = title; 
-    project.description = description;
-    project.content = content;
-    project.image = image;
+    (project as IProject).title = title; 
+    (project as IProject).description = description;
+    (project as IProject).content = content;
+    (project as IProject).image = image;
 
     await project.save();
     return NextResponse.json(project);

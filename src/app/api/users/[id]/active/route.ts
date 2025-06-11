@@ -1,7 +1,8 @@
-
 import { NextResponse } from "next/server";
-import User from "@/models/User";
+import { User } from "@/models/User";
 import connect from "@/lib/db";
+import { Model } from "mongoose";
+import { IUser } from "@/models/User";
 
 export async function PATCH(
   req: Request,
@@ -17,7 +18,7 @@ export async function PATCH(
       return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
     }
 
-    const user = await User.findById(id);
+    const user = await (User as Model<IUser>).findById(id);
     if (!user) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }

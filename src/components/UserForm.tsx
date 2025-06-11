@@ -9,7 +9,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface UserFormProps {
   onSuccess: () => void;
-  user?: { _id: string; name: string; email: string; role: string; profileImg?: string };
+  user?: {
+    _id: string;
+    name: string;
+    email: string;
+    role: string;
+    profileImg?: string;
+  } | undefined;
 }
 
 export function UserForm({ onSuccess, user }: UserFormProps) {
@@ -19,8 +25,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [profileImg, setProfileImg] = useState(user?.profileImg || "");
+  const [profileImg] = useState(user?.profileImg || "");
   const [newProfileImg, setNewProfileImg] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const isEditMode = !!user;
 
@@ -55,41 +62,49 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     if (!isEditMode && password !== confirmPassword) {
       setError("Las contraseñas no coinciden.");
+      setIsLoading(false);
       return;
     }
 
     try {
-      const url = isEditMode ? `/api/users/${user._id}` : "/api/users/create";
-      const method = isEditMode ? "PUT" : "POST";
       const finalProfileImg = newProfileImg ? newProfileImg : profileImg;
+      const userData = isEditMode
+        ? {
+            ...(name !== user?.name && { name }),
+            ...(password && { password }),
+            ...(role !== user?.role && { role }),
+            ...(finalProfileImg !== user?.profileImg && { profileImg: finalProfileImg }),
+          }
+        : { name, email, password, role, profileImg: finalProfileImg };
 
-      const body = isEditMode
-        ? JSON.stringify({ name, password, role, profileImg: finalProfileImg })
-        : JSON.stringify({ name, email, password, role, profileImg: finalProfileImg });
-
-      const token = localStorage.getItem("token");
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body,
-      });
+      const response = await fetch(
+        isEditMode ? `/api/users/${user?._id}` : "/api/users",
+        {
+          method: isEditMode ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(userData),
+        }
+      );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al procesar la solicitud");
+        const data = await response.json();
+        throw new Error(data.error || "Error al procesar la solicitud");
       }
 
       onSuccess();
-    } catch (error: any) {
-      setError(error.message || "Error al procesar la solicitud. Inténtalo de nuevo.");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -171,7 +186,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
         </div>
       )}
       {error && <p className="text-red-500">{error}</p>}
-      <Button type="submit">{isEditMode ? "Actualizar usuario" : "Crear usuario"}</Button>
+      <Button type="submit" disabled={isLoading}>
+        {isLoading ? "Procesando..." : isEditMode ? "Actualizar usuario" : "Crear usuario"}
+      </Button>
     </form>
   );
 }

@@ -1,41 +1,99 @@
 import { NextResponse } from "next/server";
 import Project from "@/models/Project";
-import BlogPost from "@/models/BlogPost";
+import { BlogPost } from "@/models/BlogPost";
 import connect from "@/lib/db";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { Types } from "mongoose";
 
 export async function POST(req: Request) {
-  await connect();
-
   try {
-    const { type, title, description, content, image, author, slug } = await req.json();
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    // Get the user ID from the session
+    const userId = (session.user as any).id;
+    if (!userId) {
+      return NextResponse.json(
+        { error: "User ID not found in session" },
+        { status: 401 }
+      );
+    }
+
+    await connect();
+
+    const { 
+      type, 
+      title, 
+      description, 
+      content, 
+      image,
+      slug,
+      published,
+      scheduledFor
+    } = await req.json();
 
     if (type === "blog") {
-      const newBlogPost = new BlogPost({
+      const blogPostData = {
         title,
-        description,
+        excerpt: description,
         content,
         image,
-        author,
+        author: new Types.ObjectId(userId),
         slug,
+        type: 'blog',
+        status: published ? 'published' : 'draft',
+        publishedAt: published ? new Date() : null,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
+        published: published || false,
+      };
+      
+      const newBlogPost = new BlogPost(blogPostData);
+      const savedPost = await newBlogPost.save();
+      
+      return NextResponse.json({ 
+        success: true,
+        data: savedPost,
+        message: "Entrada de blog guardada exitosamente" 
       });
-      await newBlogPost.save();
-      return NextResponse.json({ message: "Entrada de blog guardada exitosamente" });
     } else if (type === "projects") {
       const newProject = new Project({
         title,
         description,
         content,
         image,
-        author,
+        author: userId,
         slug,
+        status: published ? 'published' : 'draft',
+        publishedAt: published ? new Date() : null,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : null,
       });
-      await newProject.save();
-      return NextResponse.json({ message: "Proyecto guardado exitosamente" });
+
+      const savedProject = await newProject.save();
+      return NextResponse.json({ 
+        success: true,
+        data: savedProject,
+        message: "Proyecto guardado exitosamente" 
+      });
     } else {
-      return NextResponse.json({ error: "Tipo de contenido no válido" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Tipo de contenido no válido" }, 
+        { status: 400 }
+      );
     }
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Error al guardar el contenido" }, { status: 500 });
+    console.error("Error saving content:", error);
+    return NextResponse.json(
+      { 
+        error: "Error al guardar el contenido",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, 
+      { status: 500 }
+    );
   }
 }

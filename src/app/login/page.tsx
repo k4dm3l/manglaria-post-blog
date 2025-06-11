@@ -2,16 +2,24 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { LoadingPage } from "@/components/ui/loading";
 
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { status } = useSession();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      router.push(searchParams.get("from") || "/dashboard");
+    }
+  }, [status, router, searchParams]);
 
   useEffect(() => {
     if (searchParams.get("error")) {
@@ -32,14 +40,20 @@ function LoginForm() {
         redirect: false,
       });
 
-      if (result?.error) throw new Error(result.error);
-      window.location.href = searchParams.get("from") || "/dashboard";
+      if (!result?.ok) {
+        throw new Error(result?.error || 'Authentication failed');
+      }
     } catch (err) {
+      console.error('Sign in error:', err);
       setError("Credenciales inválidas. Intenta nuevamente.");
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (status === "loading") {
+    return <LoadingPage />;
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/40">
@@ -98,10 +112,8 @@ function LoginForm() {
 // Componente principal de la página
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted/40">
-      <Suspense fallback={<div>Cargando formulario...</div>}>
-        <LoginForm />
-      </Suspense>
-    </div>
+    <Suspense fallback={<LoadingPage />}>
+      <LoginForm />
+    </Suspense>
   );
 }

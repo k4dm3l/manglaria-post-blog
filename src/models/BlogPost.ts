@@ -1,36 +1,22 @@
-import { generateSlug } from "@/lib/utils";
-import mongoose, { Document } from "mongoose";
+import mongoose, { Schema } from 'mongoose';
+import { IBlogPost } from '@/types/blog';
 
-export interface IBlogPost extends Document {
-  title: string;
-  description: string;
-  content: string;
-  author: mongoose.Schema.Types.ObjectId;
-  isDeleted: boolean;
-  image: string;
-  slug: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-const blogPostSchema = new mongoose.Schema(
-  {
-    title: { type: String, required: true, unique: true },
-    description: { type: String, required: true },
-    content: { type: String, required: true },
-    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-    image: { type: String },
-    isDeleted: { type: Boolean, default: false },
-    slug: { type: String, required: true, unique: true }
-  },
-  { timestamps: true }
-);
-
-blogPostSchema.pre("save", function (next) {
-  if (!this.slug) {
-    this.slug = generateSlug(this.title);
-  }
-  next();
+const blogPostSchema = new Schema<IBlogPost>({
+  title: { type: String, required: true },
+  slug: { type: String, required: true, unique: true },
+  content: { type: String, required: true },
+  excerpt: { type: String, required: true },
+  type: { type: String, enum: ['blog', 'news'], required: true },
+  author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+  tags: [{ type: String }],
+  image: { type: String, required: true },
+  imagePublicId: String,
+  scheduledFor: Date,
+  publishedAt: Date,
+  published: { type: Boolean, default: false },
+  isDeleted: { type: Boolean, default: false },
+}, {
+  timestamps: true
 });
 
-export default mongoose.models.BlogPost || mongoose.model<IBlogPost>("BlogPost", blogPostSchema);
+export const BlogPost = mongoose.models.BlogPost || mongoose.model<IBlogPost>('BlogPost', blogPostSchema);

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import MarkdownUploader from "@/components/MarkdownUploader";
+import { LoadingPage } from "@/components/ui/loading";
 
 export default function EditPostPage() {
   const router = useRouter();
@@ -28,14 +29,29 @@ export default function EditPostPage() {
           throw new Error("Tipo o slug no válido");
         }
 
-        const response = await fetch(`/api/${type}/${params.slug}`);
+        const response = await fetch(`/api/${type}/${params.slug}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
         const data = await response.json();
 
         if (!response.ok) {
           throw new Error(data.error || "Error al cargar los datos");
         }
 
-        setInitialData({ ...data, description: data.description || data.excerpt });
+        const blogData = params.type === "projects" ? data : data.data;
+        
+        setInitialData({
+          _id: blogData._id,
+          title: blogData.title,
+          description: blogData.excerpt || blogData.description,
+          content: blogData.content,
+          image: blogData.image,
+          slug: blogData.slug
+        });
       } catch (err) {
         setError("Error cargando los datos");
         console.error(err);
@@ -55,13 +71,15 @@ export default function EditPostPage() {
     image: string;
     author: string;
     slug: string;
+    published: boolean;
+    scheduledFor: Date | undefined;
   }) => {
     try {
       if (!type || !params.slug) {
         throw new Error("Tipo o slug no válido");
       }
 
-      const response = await fetch(`/api/${type}/${params.slug}/update`, {
+      const response = await fetch(`/api/${type}/${params.slug}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +99,7 @@ export default function EditPostPage() {
   };
 
   if (isLoading) {
-    return <div className="container mx-auto p-4">Cargando...</div>;
+    return <LoadingPage />;
   }
 
   if (error) {

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import connect from '@/lib/db';
-import BlogPost from '@/models/BlogPost';
+import { BlogPost } from '@/models/BlogPost';
 import Project from '@/models/Project';
 import '@/models/User';
 
@@ -40,7 +40,7 @@ export async function GET(
     const Model = type === 'blog' ? BlogPost : Project;
     const populateOptions = { path: 'author', select: 'name profileImg' };
 
-    const data = await Model.find({ isDeleted: false })
+    const data = await (Model as any).find({ isDeleted: false })
       .select('-content -__v')
       .skip(skip)
       .limit(limit)
@@ -48,7 +48,7 @@ export async function GET(
       .populate(populateOptions)
       .lean();
 
-    const total = await Model.countDocuments({ isDeleted: false });
+    const total = await (Model as any).countDocuments({ isDeleted: false });
 
     const response = NextResponse.json({
       data,

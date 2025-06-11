@@ -9,7 +9,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ColumnDef } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,7 +56,7 @@ export const columns = (
           <Avatar>
             <AvatarImage src={blogPost.author.profileImg} alt={blogPost.author.name} />
             <AvatarFallback>
-              {blogPost.author.name?.split('')[0].toUpperCase()} {/* Mostrar la primera letra del nombre */}
+              {blogPost.author?.name?.[0]?.toUpperCase() ?? '?'}
             </AvatarFallback>
           </Avatar>
           <Badge variant="outline" className="text-xs"> {/* Reducir el tamaño de la letra */}
@@ -114,11 +114,6 @@ export const columns = (
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(blogPost._id)}
-            >
-              Copiar ID
-            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleEdit}>
               Editar

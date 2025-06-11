@@ -1,10 +1,11 @@
-import Project from "@/models/Project";
+import Project, { IProject } from "@/models/Project";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 import { headers } from "next/headers";
 import { validateToken } from '@/lib/auth';
 import connect from "@/lib/db";
+import { Model } from "mongoose";
 
 export async function GET(request: Request) {
   try {
@@ -16,6 +17,9 @@ export async function GET(request: Request) {
 
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
+      if (!token) {
+        return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+      }
       session = await validateToken(token);
       
       if (!session) {
@@ -40,7 +44,8 @@ export async function GET(request: Request) {
       ? { title: { $regex: search, $options: "i" } } 
       : { };
     
-    const projects = await Project.find(filter)
+    const ProjectModel = Project as Model<IProject>;
+    const projects = await ProjectModel.find(filter)
       .select("-content")
       .sort({ createdAt: -1 })
       .skip(skip)
@@ -51,15 +56,18 @@ export async function GET(request: Request) {
       })
       .exec();
 
-    const formattedProjects = projects.map((project) => ({
-      ...project.toObject(),
-      author: {
-        name: project.author.name,
-        profileImg: project.author.profileImg || null,
-      },
-    }));
+    const formattedProjects = projects.map((project) => {
+      const populatedProject = project.toObject() as unknown as IProject & { author: { name: string; profileImg: string | null } };
+      return {
+        ...populatedProject,
+        author: {
+          name: populatedProject.author.name,
+          profileImg: populatedProject.author.profileImg || null,
+        },
+      };
+    });
 
-    const total = await Project.countDocuments(filter);
+    const total = await ProjectModel.countDocuments(filter);
 
     return NextResponse.json({
       data: formattedProjects,

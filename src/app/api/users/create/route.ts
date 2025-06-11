@@ -1,12 +1,14 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import User from "@/models/User";
+import { User } from "@/models/User";
 import connect from "@/lib/db";
 import { headers } from "next/headers";
 import { validateToken } from '@/lib/auth';
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 import jwt from "jsonwebtoken";
+import { Model } from "mongoose";
+import { IUser } from "@/models/User";
 
 export async function POST(req: Request) {
   try {
@@ -35,19 +37,19 @@ export async function POST(req: Request) {
     }
 
     const currentUserId = session.userId ? session.userId : session.user.id;
-    const adminUser = await User.findById(currentUserId);
+    const adminUser = await (User as Model<IUser>).findById(currentUserId);
 
     if (!adminUser || adminUser.role !== "admin") {
       return NextResponse.json({ error: "No tienes permisos para crear usuarios" }, { status: 403 });
     }
 
     const { name, email, password, role } = await req.json();
-    const existingUser = await User.findOne({ email });
+    const existingUser = await (User as Model<IUser>).findOne({ email });
     if (existingUser) {
       return NextResponse.json({ error: "El usuario ya existe" }, { status: 400 });
     }
 
-    const user = await User.create({ name, email, password: await bcrypt.hash(password as string, 12), role });
+    const user = await (User as Model<IUser>).create({ name, email, password: await bcrypt.hash(password as string, 12), role });
     return NextResponse.json({ user }, { status: 201 });
   } catch (err) {
     console.error(err);

@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import User from "@/models/User";
+import { User } from "@/models/User";
 import connect from "@/lib/db";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { Model } from "mongoose";
+import { IUser } from "@/models/User";
 
 export async function DELETE(
-  req: Request,
+  _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   await connect();
@@ -17,7 +19,7 @@ export async function DELETE(
   }
 
   try {
-    const userToDelete = await User.findById(id);
+    const userToDelete = await (User as Model<IUser>).findById(id);
     if (!userToDelete) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
@@ -29,7 +31,7 @@ export async function DELETE(
       );
     }
 
-    await User.findByIdAndDelete(id);
+    await (User as Model<IUser>).findByIdAndDelete(id);
     return NextResponse.json({ message: "Usuario eliminado exitosamente" });
   } catch (error) {
     return NextResponse.json(

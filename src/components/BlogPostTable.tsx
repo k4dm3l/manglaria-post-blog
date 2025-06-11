@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   getCoreRowModel,
   useReactTable,
-  getPaginationRowModel,
   getSortedRowModel,
   SortingState,
   flexRender,
@@ -20,19 +19,30 @@ import { Input } from "@/components/ui/input";
 import { columns as defaultColumns, BlogPost } from "./BlogPostTableColumns";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { ErrorBoundary } from "./error-boundary";
+import { LoadingTable, LoadingSearch, LoadingOverlay } from "./ui/loading";
+import { Pagination } from "./ui/pagination";
+import { PaginationResult } from "@/lib/pagination";
+import { useDebounce } from "@/lib/hooks";
 
 export function BlogPostTable() {
   const { data: session } = useSession();
   const [data, setData] = useState<BlogPost[]>([]);
-  const [pagination, setPagination] = useState({
+  const [pagination, setPagination] = useState<PaginationResult<BlogPost>>({
+    items: [],
+    total: 0,
     page: 1,
     limit: 10,
-    total: 0,
     totalPages: 1,
+    hasNextPage: false,
+    hasPreviousPage: false,
   });
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const router = useRouter();
 
   const fetchBlogPosts = async (page: number, limit: number, search: string) => {
@@ -41,38 +51,51 @@ export function BlogPostTable() {
       const response = await fetch(
         `/api/blogs?page=${page}&limit=${limit}&search=${search}`
       );
+      if (!response.ok) {
+        throw new Error('Failed to fetch blog posts');
+      }
       const result = await response.json();
       setData(result.data);
       setPagination(result.pagination);
     } catch (error) {
       console.error("Error fetching Blog Posts:", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchBlogPosts(pagination.page, pagination.limit, search);
-  }, [pagination.page, pagination.limit, search]);
+    fetchBlogPosts(pagination.page, pagination.limit, debouncedSearch)
+      .catch(console.error)
+      .finally(() => setSearchLoading(false));
+  }, [debouncedSearch, pagination.page, pagination.limit]);
+
+  const handlePageChange = async (newPage: number) => {
+    setPaginationLoading(true);
+    try {
+      await fetchBlogPosts(newPage, pagination.limit, debouncedSearch);
+    } finally {
+      setPaginationLoading(false);
+    }
+  };
 
   const handleToggleDelete = async (blogPostId: string, isDeleted: boolean) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`/api/blogs/${blogPostId}/delete`, {
+      const response = await fetch(`/api/blogs/${blogPostId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ isDeleted }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || "Error al actualizar el estado del usuario");
+        throw new Error(errorData.error || "Error al actualizar el estado del blog post");
       }
 
-      fetchBlogPosts(pagination.page, pagination.limit, search);
+      await fetchBlogPosts(pagination.page, pagination.limit, debouncedSearch);
     } catch (error: any) {
       console.error("Error al actualizar el estado del blog post:", error.message);
       alert(error.message);
@@ -85,120 +108,103 @@ export function BlogPostTable() {
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    manualPagination: true,
-    pageCount: pagination.totalPages,
     state: {
-      pagination: {
-        pageIndex: pagination.page - 1,
-        pageSize: pagination.limit,
-      },
       sorting,
-    },
-    onPaginationChange: (updater) => {
-      const newPagination =
-        typeof updater === "function"
-          ? updater({
-              pageIndex: pagination.page - 1,
-              pageSize: pagination.limit,
-            })
-          : updater;
-      setPagination((prev) => ({
-        ...prev,
-        page: newPagination.pageIndex + 1,
-        limit: newPagination.pageSize,
-      }));
     },
     onSortingChange: setSorting,
   });
 
   return (
-    <div className="w-full">
-      <div className="flex items-center justify-between py-4">
-        <Input
-          placeholder="Buscar por titulo..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="max-w-sm"
-        />
-        {session?.user.role === 'admin' && (
-          <Button onClick={() => router.push(`/editor`)}>
-            Crear blog post
-          </Button>
-        )}
-      </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {loading ? "Cargando..." : "No se encontraron resultados."}
-                </TableCell>
-              </TableRow>
+    <ErrorBoundary>
+      <div className="w-full">
+        <div className="flex items-center justify-between py-4">
+          <div className="relative max-w-sm">
+            <Input
+              placeholder="Buscar por titulo..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              className="pr-8"
+            />
+            {searchLoading && (
+              <div className="absolute right-2 top-1/2 -translate-y-1/2">
+                <LoadingSearch />
+              </div>
             )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Siguiente
-          </Button>
+          </div>
+          {session?.user.role === 'admin' && (
+            <Button onClick={() => router.push(`/editor`)}>
+              Crear blog post
+            </Button>
+          )}
+        </div>
+        <LoadingOverlay isLoading={loading}>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={columns.length} className="h-24">
+                      <LoadingTable />
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      No se encontraron resultados.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </LoadingOverlay>
+        <div className="relative mt-4">
+          <LoadingOverlay isLoading={paginationLoading}>
+            <Pagination 
+              pagination={pagination} 
+              onPageChange={handlePageChange}
+            />
+          </LoadingOverlay>
         </div>
       </div>
-
-    </div>
+    </ErrorBoundary>
   );
 }

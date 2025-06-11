@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
-import Project from "@/models/Project";
+import Project, { IProject } from "@/models/Project";
 import connect from "@/lib/db";
+import { Model } from "mongoose";
 
 export async function GET(
-  request: Request,
+  _: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   await connect();
   const { id } = await params;
 
   try {
-    const project = await Project.findById(id).exec();
+    const ProjectModel = Project as Model<IProject>;
+    const project = await ProjectModel.findById(id).exec();
 
     if (!project) {
       return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });

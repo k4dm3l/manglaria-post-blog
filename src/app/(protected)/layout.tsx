@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import Navigation from "@/components/Navigation";
+import { LoadingPage } from "@/components/ui/loading";
 
 export default function ProtectedLayout({
   children,
@@ -12,11 +13,7 @@ export default function ProtectedLayout({
   const { status } = useSession();
 
   if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Cargando...</p>
-      </div>
-    );
+    return <LoadingPage />;
   }
 
   if (status === "unauthenticated") {

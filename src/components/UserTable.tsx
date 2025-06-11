@@ -21,6 +21,8 @@ import { columns as defaultColumns, User } from "./UsersTableColumns";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { UserForm } from "./UserForm";
+import { LoadingTable, LoadingSearch, LoadingOverlay } from "./ui/loading";
+import { useDebounce } from "@/lib/hooks";
 
 export function UsersTable() {
   const { data: session } = useSession();
@@ -32,8 +34,11 @@ export function UsersTable() {
     totalPages: 1,
   });
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -46,18 +51,51 @@ export function UsersTable() {
         `/api/users?page=${page}&limit=${limit}&search=${search}&excludeUserId=${session?.user?.id}`
       );
       const result = await response.json();
-      setData(result.data);
-      setPagination(result.pagination);
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to fetch users');
+      }
+
+      setData(result.data || []);
+      setPagination({
+        page: result.pagination.page,
+        limit: result.pagination.limit,
+        total: result.pagination.total,
+        totalPages: result.pagination.totalPages
+      });
     } catch (error) {
       console.error("Error fetching users:", error);
+      setData([]);
+      setPagination({
+        page: 1,
+        limit: 10,
+        total: 0,
+        totalPages: 1
+      });
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchUsers(pagination.page, pagination.limit, search);
-  }, [pagination.page, pagination.limit, search, session?.user?.id]);
+    if (!pagination) return;
+    
+    if (debouncedSearch !== search) {
+      setSearchLoading(true);
+    }
+    fetchUsers(pagination.page, pagination.limit, debouncedSearch)
+      .catch(console.error)
+      .finally(() => setSearchLoading(false));
+  }, [debouncedSearch, pagination?.page, pagination?.limit, session?.user?.id]);
+
+  const handlePageChange = async (newPage: number) => {
+    setPaginationLoading(true);
+    try {
+      await fetchUsers(newPage, pagination.limit, debouncedSearch);
+    } finally {
+      setPaginationLoading(false);
+    }
+  };
 
   const handleEdit = (user: User) => {
     setEditingUser(user);
@@ -86,7 +124,7 @@ export function UsersTable() {
         throw new Error(errorData.error || "Error al eliminar el usuario");
       }
 
-      fetchUsers(pagination.page, pagination.limit, search);
+      fetchUsers(pagination.page, pagination.limit, debouncedSearch);
     } catch (error: any) {
       console.error("Error al eliminar el usuario:", error.message);
       alert(error.message);
@@ -113,7 +151,7 @@ export function UsersTable() {
         throw new Error(errorData.error || "Error al actualizar el estado del usuario");
       }
 
-      fetchUsers(pagination.page, pagination.limit, search);
+      fetchUsers(pagination.page, pagination.limit, debouncedSearch);
     } catch (error: any) {
       console.error("Error al actualizar el estado del usuario:", error.message);
       alert(error.message);
@@ -123,23 +161,23 @@ export function UsersTable() {
   const handleSuccess = () => {
     setIsModalOpen(false);
     setEditingUser(null);
-    fetchUsers(pagination.page, pagination.limit, search);
+    fetchUsers(pagination.page, pagination.limit, debouncedSearch);
   };
 
   const columns = defaultColumns(handleEdit, handleDelete, handleToggleActive);
 
   const table = useReactTable({
-    data,
+    data: data || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     manualPagination: true,
-    pageCount: pagination.totalPages,
+    pageCount: pagination?.totalPages || 1,
     state: {
       pagination: {
-        pageIndex: pagination.page - 1,
-        pageSize: pagination.limit,
+        pageIndex: (pagination?.page || 1) - 1,
+        pageSize: pagination?.limit || 10,
       },
       sorting,
     },
@@ -147,8 +185,8 @@ export function UsersTable() {
       const newPagination =
         typeof updater === "function"
           ? updater({
-              pageIndex: pagination.page - 1,
-              pageSize: pagination.limit,
+              pageIndex: pagination?.page ? pagination.page - 1 : 0,
+              pageSize: pagination?.limit || 10,
             })
           : updater;
       setPagination((prev) => ({
@@ -160,15 +198,24 @@ export function UsersTable() {
     onSortingChange: setSorting,
   });
 
+  if (!table) return null;
+
   return (
     <div className="w-full">
       <div className="flex items-center justify-between py-4">
-        <Input
-          placeholder="Buscar por nombre..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="max-w-sm"
-        />
+        <div className="relative max-w-sm">
+          <Input
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="pr-8"
+          />
+          {searchLoading && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              <LoadingSearch />
+            </div>
+          )}
+        </div>
         {session?.user.role === 'admin' && (
           <Button onClick={() => {
             setEditingUser(null);
@@ -178,75 +225,87 @@ export function UsersTable() {
           </Button>
         )}
       </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+      <LoadingOverlay isLoading={loading}>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {loading ? "Cargando..." : "No se encontraron resultados."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Siguiente
-          </Button>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24">
+                    <LoadingTable />
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel()?.rows?.length ? (
+                table.getRowModel()?.rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No se encontraron resultados.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
+      </LoadingOverlay>
+      <div className="relative mt-4">
+        <LoadingOverlay isLoading={paginationLoading}>
+          <div className="flex items-center justify-end space-x-2 py-4">
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        </LoadingOverlay>
       </div>
 
       {/* Modal para crear/editar usuario */}

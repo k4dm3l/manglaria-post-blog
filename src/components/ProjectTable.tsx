@@ -20,6 +20,8 @@ import { Input } from "@/components/ui/input";
 import { columns as defaultColumns, Project } from "./ProjectsTableColumns";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { LoadingTable, LoadingSearch, LoadingOverlay } from "./ui/loading";
+import { useDebounce } from "@/lib/hooks";
 
 export function ProjectTable() {
   const { data: session } = useSession();
@@ -31,8 +33,11 @@ export function ProjectTable() {
     totalPages: 1,
   });
   const [loading, setLoading] = useState(true);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [paginationLoading, setPaginationLoading] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 300);
   const router = useRouter();
 
   const fetchProjects = async (page: number, limit: number, search: string) => {
@@ -52,8 +57,22 @@ export function ProjectTable() {
   };
 
   useEffect(() => {
-    fetchProjects(pagination.page, pagination.limit, search);
-  }, [pagination.page, pagination.limit, search]);
+    if (debouncedSearch !== search) {
+      setSearchLoading(true);
+    }
+    fetchProjects(pagination.page, pagination.limit, debouncedSearch)
+      .catch(console.error)
+      .finally(() => setSearchLoading(false));
+  }, [debouncedSearch, pagination.page, pagination.limit]);
+
+  const handlePageChange = async (newPage: number) => {
+    setPaginationLoading(true);
+    try {
+      await fetchProjects(newPage, pagination.limit, debouncedSearch);
+    } finally {
+      setPaginationLoading(false);
+    }
+  };
 
   const handleToggleDelete = async (projectId: string, isDeleted: boolean) => {
     try {
@@ -116,89 +135,107 @@ export function ProjectTable() {
   return (
     <div className="w-full">
       <div className="flex items-center justify-between py-4">
-        <Input
-          placeholder="Buscar por nombre..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          className="max-w-sm"
-        />
+        <div className="relative max-w-sm">
+          <Input
+            placeholder="Buscar por nombre..."
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            className="pr-8"
+          />
+          {searchLoading && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              <LoadingSearch />
+            </div>
+          )}
+        </div>
         {session?.user.role === 'admin' && (
           <Button onClick={() => router.push(`/editor`)}>
             Crear proyecto
           </Button>
         )}
       </div>
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => {
-                  return (
-                    <TableHead key={header.id}>
-                      {header.isPlaceholder
-                        ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
-                    </TableHead>
-                  );
-                })}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows?.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
-                  ))}
+      <LoadingOverlay isLoading={loading}>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => {
+                    return (
+                      <TableHead key={header.id}>
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    );
+                  })}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  {loading ? "Cargando..." : "No se encontraron resultados."}
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2 py-4">
-        <div className="space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Siguiente
-          </Button>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length} className="h-24">
+                    <LoadingTable />
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No se encontraron resultados.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
+      </LoadingOverlay>
+      <div className="relative mt-4">
+        <LoadingOverlay isLoading={paginationLoading}>
+          <div className="flex items-center justify-end space-x-2 py-4">
+            <div className="space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page - 1)}
+                disabled={!table.getCanPreviousPage()}
+              >
+                Anterior
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(pagination.page + 1)}
+                disabled={!table.getCanNextPage()}
+              >
+                Siguiente
+              </Button>
+            </div>
+          </div>
+        </LoadingOverlay>
       </div>
-
     </div>
   );
 }

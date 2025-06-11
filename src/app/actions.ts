@@ -10,19 +10,19 @@ const octokit = new OctokitWithThrottling({
   auth: process.env.GITHUB_TOKEN,
   throttle: {
     onRateLimit: (
-      retryAfter: number,
+      _retryAfter: number,
       options: any,
-      octokit: any,
+      _octokit: any,
       retryCount: number
     ) => {
       console.warn(`Rate limit excedido para ${options.method} ${options.url} - Reintentos: ${retryCount}`);
       return retryCount < 5;
     },
     onSecondaryRateLimit: (
-      retryAfter: number,
+      _retryAfter: number,
       options: any,
-      octokit: any,
-      retryCount: number
+      _octokit: any,
+      _retryCount: number
     ) => {
       console.error(`Secondary rate limit detectado para ${options.method} ${options.url}`);
       return false;
@@ -76,7 +76,7 @@ export async function uploadMarkdown(formData: FormData) {
       message: `Nuevo contenido: ${title} [skip-ci]`,
       content: Buffer.from(content).toString("base64"),
       branch: "develop",
-      sha,
+      ...(sha && { sha }),
       committer: {
         name: "CMS Manglaria",
         email: "cms@manglaria.org",
@@ -176,12 +176,16 @@ export async function getPostContent(path: string) {
     });
 
     const content = Buffer.from((data as any).content, "base64").toString("utf8");
+    const parts = content.split("---");
+    if (parts.length < 3) {
+      return null;
+    }
     const { title, description } = parseFrontmatter(content);
     
     return {
       title,
       description,
-      content: content.split("---")[2].trim(),
+      content: (parts[2] as string).trim(),
       sha: (data as any).sha
     };
   } catch (error: any) {
@@ -218,7 +222,11 @@ export async function updateMarkdownFile(
 }
 
 function parseFrontmatter(content: string) {
-  const frontmatter = content.split("---")[1];
+  const parts = content.split("---");
+  if (parts.length < 2) {
+    return { title: "", description: "" };
+  }
+  const frontmatter = parts[1] as string;
   return {
     title: frontmatter.match(/title: (.*)/)?.[1]?.trim() || "",
     description: frontmatter.match(/description: (.*)/)?.[1]?.trim() || ""

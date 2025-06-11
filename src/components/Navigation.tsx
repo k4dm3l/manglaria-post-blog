@@ -47,7 +47,7 @@ export default function Navigation() {
         <span className="text-sm text-muted-foreground">{session.user?.email}</span>
         <Avatar>
           <AvatarImage src={session.user.profileImg} alt="@shadcn" />
-          <AvatarFallback>{session.user.name?.split('')[0].toUpperCase()}</AvatarFallback>
+          <AvatarFallback>{session.user?.name?.[0]?.toUpperCase() ?? '?'}</AvatarFallback>
         </Avatar>
         <Button asChild variant="outline" className="space-x-2">
           <Link href="/editor">

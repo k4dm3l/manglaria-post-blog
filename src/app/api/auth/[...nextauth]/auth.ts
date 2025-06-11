@@ -1,7 +1,9 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import User from "@/models/User";
+import { User, IUser } from "@/models/User";
 import connect from "@/lib/db";
+import { Types } from "mongoose";
+import { Model } from "mongoose";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -13,9 +15,9 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         await connect();
-        const user = await User.findOne({ email: credentials?.email });
+        const user = await (User as Model<IUser>).findOne({ email: credentials?.email }) as (IUser & { _id: Types.ObjectId, comparePassword(password: string): Promise<boolean> }) | null;
         
-        if (!user || !(await user.comparePassword(credentials?.password))) {
+        if (!user || !credentials?.password || !(await user.comparePassword(credentials.password))) {
           return null;
         }
         
@@ -23,7 +25,7 @@ export const authOptions: NextAuthOptions = {
           id: user._id.toString(),
           email: user.email,
           name: user.name,
-          profileImg: user.profileImg,
+          profileImg: user.profileImg || "",
           role: user.role,
         };
       }
@@ -54,7 +56,7 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.email = user.email;
+        token.email = user.email ?? null;
         token.role = user.role;
         token.profileImg = user.profileImg;
       }

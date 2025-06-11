@@ -1,32 +1,38 @@
-import User from "@/models/User";
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
-import { headers } from "next/headers";
-import { validateToken } from '@/lib/auth';
+import { getServerSession } from "next-auth";
+import { authOptions } from "../auth/[...nextauth]/route";
 import connect from "@/lib/db";
+import { User } from "@/models/User";
+import { Model } from "mongoose";
+import { IUser } from "@/models/User";
+// import { validate } from "@/middleware/validate";
+import { z } from "zod";
+
+// Add type for session user
+type SessionUser = {
+  id: string;
+  email: string;
+  name: string;
+  role: 'admin' | 'user';
+};
+
+// Update validation schema
+const userSchema = z.object({
+  name: z.string().min(2, "El nombre debe tener al menos 2 caracteres"),
+  email: z.string().email("Email inválido"),
+  password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres"),
+  role: z.enum(["admin", "editor"]),
+  profileImg: z.string().url("URL de imagen inválida").optional().or(z.literal("")),
+});
 
 export async function GET(request: Request) {
   try {
-    await connect();
-
-    const headersList = await headers();
-    const authHeader = headersList.get("authorization");
-    let session = null;
-
-    if (authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.split(" ")[1];
-      session = await validateToken(token);
-      
-      if (!session) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-      }
-    } else {
-      session = await getServerSession(authOptions);
-      
-      if (!session?.user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-      }
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     const { searchParams } = new URL(request.url);
@@ -34,23 +40,29 @@ export async function GET(request: Request) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
     const excludeUserId = searchParams.get("excludeUserId") || "";
-    const skip = (page - 1) * limit;
 
-    const filter: any = 
-      search 
-      ? { name: { $regex: search, $options: "i" }, active: true } 
-      : { };
-    
-    if (excludeUserId) {
-      filter._id = { $ne: excludeUserId };
+    await connect();
+
+    const query: any = {};
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+      ];
+    }
+    if (excludeUserId && excludeUserId !== "undefined") {
+      query._id = { $ne: excludeUserId };
     }
 
-    const users = await User.find(filter)
+    const total = await (User as Model<IUser>).countDocuments(query);
+    const totalPages = Math.ceil(total / limit);
+    const skip = (page - 1) * limit;
+
+    const users = await (User as Model<IUser>).find(query)
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .exec();
-
-    const total = await User.countDocuments(filter);
+      .lean();
 
     return NextResponse.json({
       data: users,
@@ -58,11 +70,72 @@ export async function GET(request: Request) {
         page,
         limit,
         total,
-        totalPages: Math.ceil(total / limit),
+        totalPages,
       },
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "No user found" }, { status: 400 });
+    console.error("Detailed error in GET /api/users:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const user = session.user as SessionUser;
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Admin access required" },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const validationResult = userSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          error: "Validation error",
+          details: validationResult.error.errors
+        },
+        { status: 400 }
+      );
+    }
+
+    const userData = validationResult.data;
+    await connect();
+
+    const existingUser = await (User as Model<IUser>).findOne({ email: userData.email });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "Email already exists" },
+        { status: 400 }
+      );
+    }
+
+    const newUser = new User(userData);
+    await newUser.save();
+
+    return NextResponse.json({
+      data: newUser,
+      message: "User created successfully",
+    }, { status: 201 });
+  } catch (error) {
+    console.error("Error in POST /api/users:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
   }
 }

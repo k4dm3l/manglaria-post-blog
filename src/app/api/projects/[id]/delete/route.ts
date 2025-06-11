@@ -1,6 +1,8 @@
 import Project from "@/models/Project";
 import { NextResponse } from "next/server";
 import connect from "@/lib/db";
+import { Model } from "mongoose";
+import { IProject } from "@/models/Project";
 
 export async function PATCH(
   req: Request,
@@ -16,7 +18,8 @@ export async function PATCH(
       return NextResponse.json({ error: "ID de usuario no proporcionado" }, { status: 400 });
     }
 
-    const project = await Project.findById(id);
+    const ProjectModel = Project as Model<IProject>;
+    const project = await ProjectModel.findById(id);
     if (!project) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }

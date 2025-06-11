@@ -1,8 +1,16 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { rateLimit } from '@/middleware/rateLimit';
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  // Apply rate limiting to API routes
+  if (pathname.startsWith('/api/')) {
+    return rateLimit(request);
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET!,
@@ -11,8 +19,6 @@ export async function middleware(request: NextRequest) {
         ? "__Secure-next-auth.session-token" 
         : "next-auth.session-token"
   });
-
-  const { pathname } = request.nextUrl;
 
   if (pathname === "/") {
     if (token) {
@@ -30,3 +36,16 @@ export async function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export const config = {
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
+  ],
+};

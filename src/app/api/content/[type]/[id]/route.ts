@@ -3,13 +3,12 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import connect from '@/lib/db';
-import BlogPost from '@/models/BlogPost';
+import { BlogPost } from '@/models/BlogPost';
 import Project from '@/models/Project';
 import '@/models/User';
-import mongoose from 'mongoose';
 
 export async function GET(
-  request: Request,
+  _: Request,
   { params }: { params: Promise<{ id: string, type: string }> }
 ) {
   try {
@@ -40,7 +39,7 @@ export async function GET(
     const populateOptions = { path: 'author', select: 'name profileImg' };
 
     // 4. Buscar documento completo
-    const document = await Model.findOne({ slug: id })
+    const document = await (Model as any).findOne({ slug: id })
       .populate(populateOptions)
       .select('-__v -isDeleted')
       .lean();
