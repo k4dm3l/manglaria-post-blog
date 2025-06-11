@@ -67,8 +67,8 @@ export interface BlogPostWithAuthor {
   deletedAt?: Date;
 }
 
-export interface BlogPostResponse extends ApiResponse<BlogPostWithAuthor> {}
-export interface BlogPostListResponse extends PaginatedResponse<BlogPostWithAuthor[]> {}
+export type BlogPostResponse = ApiResponse<BlogPostWithAuthor>;
+export type BlogPostListResponse = PaginatedResponse<BlogPostWithAuthor[]>;
 
 // Request Types
 export interface PaginationParams {
@@ -123,11 +123,11 @@ export interface QueryConfig {
   search?: string;
 }
 
-export interface ProjectResponse extends ApiResponse<IProject> {}
-export interface ProjectsResponse extends ApiResponse<PaginatedResponse<IProject>> {}
+export type ProjectResponse = ApiResponse<IProject>;
+export type ProjectsResponse = ApiResponse<PaginatedResponse<IProject>>;
 
-export interface UserResponse extends ApiResponse<IUser> {}
-export interface UsersResponse extends ApiResponse<PaginatedResponse<IUser>> {}
+export type UserResponse = ApiResponse<IUser>;
+export type UsersResponse = ApiResponse<PaginatedResponse<IUser>>;
 
 export interface ValidationErrors {
   errors: ValidationError[];

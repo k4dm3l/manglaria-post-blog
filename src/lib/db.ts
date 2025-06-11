@@ -1,12 +1,15 @@
 // src/lib/db.ts
 import mongoose from "mongoose";
 
+type MongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
+
 // 1. Definir la interfaz del objeto cached
 declare global {
-  var mongoose: {
-    conn: typeof mongoose | null;
-    promise: Promise<typeof mongoose> | null;
-  };
+  // eslint-disable-next-line no-var
+  var mongoose: MongooseCache | null;
 }
 
 const MONGODB_URI = process.env.MONGODB_URI!;
@@ -16,11 +19,7 @@ if (!MONGODB_URI) {
 }
 
 // 2. Inicializar con el tipo correcto
-let cached: any = globalThis.mongoose;
-
-if (!cached) {
-  cached = globalThis.mongoose = { conn: null, promise: null };
-}
+const cached: MongooseCache = globalThis.mongoose || { conn: null, promise: null };
 
 async function connect() {
   if (cached.conn) return cached.conn;
@@ -28,7 +27,10 @@ async function connect() {
   // 3. Asegurar el tipo en la promesa
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
-      bufferCommands: false
+      bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000,
     }).then((connectedMongoose) => {
       return connectedMongoose;
     });

@@ -10,7 +10,7 @@ export async function authMiddleware(req: Request) {
   try {
     const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET!);
     return decoded;
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 }

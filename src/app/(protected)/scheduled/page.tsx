@@ -1,4 +1,4 @@
-import { getScheduledPosts } from '@/lib/scheduler';
+// import { getScheduledPosts } from '@/lib/scheduler';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { IBlogPost } from '@/types/blog';
 
 export default async function ScheduledPostsPage() {
-  const posts = await getScheduledPosts();
+  const posts: IBlogPost[] = []//await getScheduledPosts();
 
   return (
     <div className="container mx-auto p-4">

@@ -244,7 +244,7 @@ export default function MarkdownUploader({
           <div className="space-y-3">
             <Label>Imagen</Label>
             <ImageUploader
-              onImageUploaded={(url, _) => {
+              onImageUploaded={(url) => {
                 setNewImage(url);
               }}
               initialImage={image}

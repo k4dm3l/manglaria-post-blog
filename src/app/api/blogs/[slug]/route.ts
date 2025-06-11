@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { authOptions } from "@/lib/auth";
 import connect from "@/lib/db";
 import { BlogPost } from "@/models/BlogPost";
 import { Model } from "mongoose";
@@ -14,8 +14,9 @@ const updateStatusSchema = z.object({
 
 export async function GET(
   _: Request,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -39,7 +40,7 @@ export async function GET(
         select: 'name profileImg',
         model: 'User'
       })
-      .lean() as any;
+      .lean() as unknown as IBlogPost & { author?: { name: string; profileImg?: string } };
 
     if (!blogPost) {
       return NextResponse.json(
@@ -73,8 +74,9 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -160,7 +162,7 @@ export async function PATCH(
         select: 'name profileImg',
         model: 'User'
       })
-      .lean() as any;
+      .lean() as unknown as IBlogPost & { author?: { name: string; profileImg?: string } };
 
     if (!blogPost) {
       return NextResponse.json(
@@ -194,8 +196,9 @@ export async function PATCH(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { slug: string } }
+  context: { params: Promise<{ slug: string }> }
 ) {
+  const params = await context.params;
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
@@ -215,6 +218,13 @@ export async function PUT(
 
     await connect();
     const { title, description, content, image, published, scheduledFor } = await request.json();
+
+    if (!title || !description || !content) {
+      return NextResponse.json(
+        { error: "Title, description, and content are required" },
+        { status: 400 }
+      );
+    }
 
     const blogPost = await (BlogPost as Model<IBlogPost>)
       .findOneAndUpdate(
@@ -236,14 +246,17 @@ export async function PUT(
             updatedAt: new Date(),
           }
         },
-        { new: true }
+        { 
+          new: true,
+          runValidators: true 
+        }
       )
       .populate({
         path: 'author',
         select: 'name profileImg',
         model: 'User'
       })
-      .lean() as any;
+      .lean() as unknown as IBlogPost & { author?: { name: string; profileImg?: string } };
 
     if (!blogPost) {
       return NextResponse.json(
@@ -260,16 +273,17 @@ export async function PUT(
       },
     };
 
-    const response: BlogPostResponse = {
+    return NextResponse.json({
       success: true,
       data: formattedBlogPost,
-    };
-
-    return NextResponse.json(response);
+    });
   } catch (error) {
-    console.error("Error in PUT /api/blogs/[slug]:", error);
+    console.error("Error updating blog post:", error);
     return NextResponse.json(
-      { error: "Internal server error", details: error instanceof Error ? error.message : 'Unknown error' },
+      { 
+        error: "Error updating blog post",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

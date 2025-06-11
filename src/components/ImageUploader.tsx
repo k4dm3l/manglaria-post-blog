@@ -12,7 +12,7 @@ interface ImageUploaderProps {
 export default function ImageUploader({ 
   onImageUploaded, 
   initialImage,
-  folder = 'blog'
+  folder
 }: ImageUploaderProps) {
   const [preview, setPreview] = useState<string | null>(initialImage || null);
   const [uploading, setUploading] = useState(false);
@@ -40,6 +40,7 @@ export default function ImageUploader({
           },
           body: JSON.stringify({
             data: base64,
+            folder
           }),
         });
 
@@ -58,7 +59,7 @@ export default function ImageUploader({
     } finally {
       setUploading(false);
     }
-  }, [folder, onImageUploaded]);
+  }, [onImageUploaded, folder]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -101,6 +102,7 @@ export default function ImageUploader({
 
       {preview && (
         <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={preview}
             alt="Preview"

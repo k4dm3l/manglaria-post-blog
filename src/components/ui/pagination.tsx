@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
 
 interface PaginationProps {
-  pagination: PaginationResult<any>;
+  pagination: PaginationResult<unknown>;
   className?: string;
   onPageChange?: (page: number) => void;
 }

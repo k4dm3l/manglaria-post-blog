@@ -29,14 +29,18 @@ export async function POST(req: Request) {
 
       session = jwt.verify(token, process.env.NEXTAUTH_SECRET!) as { userId: string };
     } else {
-      session = await getServerSession(authOptions) as any;
+      session = await getServerSession(authOptions) as { user?: { id: string; role?: string } };
 
       if (!session) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
       }
     }
 
-    const currentUserId = session.userId ? session.userId : session.user.id;
+    const currentUserId = 'userId' in session ? session.userId : session.user?.id;
+    if (!currentUserId) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const adminUser = await (User as Model<IUser>).findById(currentUserId);
 
     if (!adminUser || adminUser.role !== "admin") {

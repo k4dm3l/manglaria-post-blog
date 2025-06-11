@@ -5,109 +5,118 @@ import { NextResponse } from "next/server";
 import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
 import { headers } from "next/headers";
 import connect from "@/lib/db";
-import { FilterQuery, Model } from "mongoose";
+import { Model } from "mongoose";
 import { setCache, generateCacheKey } from "@/lib/redis";
 import { withRateLimit, rateLimiters } from "@/lib/rate-limit";
-import { blogListQuerySchema, blogCreateSchema, blogUpdateSchema, blogDeleteSchema, validateRequest } from "@/lib/validations/blog";
-import { BlogPostResponse, BlogPostListResponse, ApiError, BlogPostWithAuthor, NextApiResponse } from "@/types/api";
+import { blogCreateSchema, blogUpdateSchema, blogDeleteSchema, validateRequest } from "@/lib/validations/blog";
+import { BlogPostResponse, ApiError, BlogPostWithAuthor } from "@/types/api";
 
 const CACHE_PREFIX = 'blog_posts';
 const CACHE_TTL = 3600; // 1 hour in seconds
 
-export async function GET(request: Request): Promise<NextApiResponse<BlogPostWithAuthor[]>> {
-  return withRateLimit(rateLimiters.blogs, async () => {
-    try {
-      await connect();
+interface PopulatedBlogPost extends Omit<IBlogPost, 'author'> {
+  author: {
+    name: string;
+    profileImg: string | null;
+  };
+}
 
-      const { searchParams } = new URL(request.url);
-      const queryParams = {
-        page: searchParams.get("page"),
-        limit: searchParams.get("limit"),
-        search: searchParams.get("search"),
-      };
+export async function GET(request: Request): Promise<NextResponse> {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
 
-      // Validate query parameters
-      const validation = await validateRequest(blogListQuerySchema, queryParams);
-      if (!validation.success || !validation.data) {
-        return NextResponse.json(
-          { success: false, error: validation.error || "Invalid query parameters" } as ApiError,
-          { status: 400 }
-        );
-      }
+    const user = session.user as { role: string };
+    if (user.role !== "admin") {
+      return NextResponse.json(
+        { error: "Forbidden: Admin access required" },
+        { status: 403 }
+      );
+    }
 
-      const { page, limit, search } = validation.data;
-      const skip = (page - 1) * limit;
+    await connect();
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "10");
+    const search = searchParams.get("search") || "";
 
-      const filter: FilterQuery<IBlogPost> = {
-        ...(search ? { title: { $regex: search, $options: "i" } } : {})
-      };
-      
-      const BlogPostModel = BlogPost as Model<IBlogPost>;
-      const blogPosts = await BlogPostModel.find(filter)
-        .select("-content")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(limit)
-        .populate({
-          path: 'author',
-          select: 'name profileImg',
-          model: 'User'
-        })
-        .lean();
+    const query = search
+      ? {
+          $or: [
+            { title: { $regex: search, $options: "i" } },
+            { content: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
 
-      const formattedBlogPost = blogPosts.map((post: any) => ({
-        ...post,
-        author: {
-          name: post?.author?.name || 'Autor desconocido',
-          profileImg: post?.author?.profileImg || null,
-        },
-      })) as BlogPostWithAuthor[];
+    const total = await (BlogPost as Model<IBlogPost>).countDocuments(query);
+    const blogPosts = (await (BlogPost as Model<IBlogPost>)
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .populate({
+        path: "author",
+        select: "name profileImg",
+        model: "User",
+      })
+      .lean()) as unknown as PopulatedBlogPost[];
 
-      const total = await BlogPostModel.countDocuments(filter);
-      const totalPages = Math.ceil(total / limit);
+    const formattedBlogPosts = blogPosts.map((post) => ({
+      ...post,
+      author: {
+        name: post.author.name || "Autor desconocido",
+        profileImg: post.author.profileImg || null,
+      },
+    }));
 
-      const pagination = {
+    const totalPages = Math.ceil(total / limit);
+
+    // Cache the results
+    const cacheKey = generateCacheKey(CACHE_PREFIX, {
+      page,
+      limit,
+      search,
+    });
+
+    await setCache(cacheKey, {
+      data: formattedBlogPosts,
+      pagination: {
         total,
         page,
         limit,
         totalPages,
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
-      };
+      },
+    }, CACHE_TTL);
 
-      // Cache the results
-      const cacheKey = generateCacheKey(CACHE_PREFIX, {
+    return NextResponse.json({
+      success: true,
+      data: {
+        items: formattedBlogPosts,
+        total,
         page,
         limit,
-        search,
-      });
-
-      await setCache(cacheKey, {
-        data: formattedBlogPost,
-        pagination,
-      }, CACHE_TTL);
-
-      const response: BlogPostListResponse = {
-        success: true,
-        data: formattedBlogPost,
-        pagination,
-        fromCache: false,
-      };
-
-      return NextResponse.json(response);
-    } catch (error) {
-      console.error(error);
-      const errorResponse: ApiError = {
-        success: false,
-        error: "Error al obtener los blog posts",
-        message: error instanceof Error ? error.message : "Error desconocido"
-      };
-      return NextResponse.json(errorResponse, { status: 400 });
-    }
-  });
+        totalPages,
+      },
+      fromCache: false,
+    });
+  } catch (error) {
+    console.error("Error in GET /api/blogs:", error);
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function POST(request: Request): Promise<NextApiResponse<BlogPostWithAuthor>> {
+export async function POST(request: Request): Promise<NextResponse> {
   return withRateLimit(rateLimiters.blogs, async () => {
     try {
       await connect();
@@ -161,7 +170,7 @@ export async function POST(request: Request): Promise<NextApiResponse<BlogPostWi
   });
 }
 
-export async function PUT(request: Request): Promise<NextApiResponse<BlogPostWithAuthor>> {
+export async function PUT(request: Request): Promise<NextResponse> {
   return withRateLimit(rateLimiters.blogs, async () => {
     try {
       await connect();
@@ -215,7 +224,7 @@ export async function PUT(request: Request): Promise<NextApiResponse<BlogPostWit
   });
 }
 
-export async function DELETE(request: Request): Promise<NextApiResponse<BlogPostWithAuthor>> {
+export async function DELETE(request: Request): Promise<NextResponse> {
   return withRateLimit(rateLimiters.blogs, async () => {
     try {
       await connect();

@@ -6,6 +6,7 @@ import connect from '@/lib/db';
 import { BlogPost } from '@/models/BlogPost';
 import Project from '@/models/Project';
 import '@/models/User';
+import { Model, Document } from 'mongoose';
 
 export async function GET(
   _: Request,
@@ -39,7 +40,7 @@ export async function GET(
     const populateOptions = { path: 'author', select: 'name profileImg' };
 
     // 4. Buscar documento completo
-    const document = await (Model as any).findOne({ slug: id })
+    const document = await (Model as Model<Document>).findOne({ slug: id })
       .populate(populateOptions)
       .select('-__v -isDeleted')
       .lean();

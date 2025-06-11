@@ -33,7 +33,7 @@ export async function DELETE(
 
     await (User as Model<IUser>).findByIdAndDelete(id);
     return NextResponse.json({ message: "Usuario eliminado exitosamente" });
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { error: "Error al eliminar el usuario" },
       { status: 500 }

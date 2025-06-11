@@ -12,7 +12,7 @@ interface UseFetchOptions {
   revalidateOnReconnect?: boolean;
 }
 
-const cache = new Map<string, CacheItem<any>>();
+const cache = new Map<string, CacheItem<unknown>>();
 
 export function useFetch<T>(
   url: string,
@@ -35,7 +35,7 @@ export function useFetch<T>(
       const now = Date.now();
 
       if (cachedData && now - cachedData.timestamp < cacheTime) {
-        setData(cachedData.data);
+        setData(cachedData.data as T);
         setIsLoading(false);
         return;
       }

@@ -39,13 +39,13 @@ export const deleteCache = async (key: string): Promise<void> => {
   }
 };
 
-export const generateCacheKey = (prefix: string, params: Record<string, any>): string => {
+export const generateCacheKey = (prefix: string, params: Record<string, unknown>): string => {
   const sortedParams = Object.keys(params)
     .sort()
     .reduce((acc, key) => {
       acc[key] = params[key];
       return acc;
-    }, {} as Record<string, any>);
+    }, {} as Record<string, unknown>);
   
   return `${prefix}:${JSON.stringify(sortedParams)}`;
 }; 

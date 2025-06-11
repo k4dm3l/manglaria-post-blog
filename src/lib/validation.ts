@@ -9,7 +9,7 @@ export type ValidationRules<T> = {
   [K in keyof T]?: ValidationRule<T[K]>[];
 };
 
-export function validateForm<T extends Record<string, any>>(
+export function validateForm<T extends Record<string, unknown>>(
   data: T,
   rules: ValidationRules<T>
 ): ValidationError[] {
@@ -36,7 +36,7 @@ export function validateForm<T extends Record<string, any>>(
 
 // Common validation rules
 export const rules = {
-  required: (message = 'This field is required'): ValidationRule<any> => ({
+  required: (message = 'This field is required'): ValidationRule<unknown> => ({
     validate: (value) => value !== undefined && value !== null && value !== '',
     message,
   }),

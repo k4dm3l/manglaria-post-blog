@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || "";
     const skip = (page - 1) * limit;
 
-    const filter: any = 
+    const filter: Record<string, unknown> = 
       search 
       ? { title: { $regex: search, $options: "i" } } 
       : { };
