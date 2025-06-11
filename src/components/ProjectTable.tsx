@@ -63,7 +63,7 @@ export function ProjectTable() {
     fetchProjects(pagination.page, pagination.limit, debouncedSearch)
       .catch(console.error)
       .finally(() => setSearchLoading(false));
-  }, [debouncedSearch, pagination.page, pagination.limit]);
+  }, [debouncedSearch, pagination.page, pagination.limit, search]);
 
   const handlePageChange = async (newPage: number) => {
     setPaginationLoading(true);
@@ -92,9 +92,10 @@ export function ProjectTable() {
       }
 
       fetchProjects(pagination.page, pagination.limit, search);
-    } catch (error: any) {
-      console.error("Error al actualizar el estado del proyecto:", error.message);
-      alert(error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el estado del proyecto';
+      console.error("Error al actualizar el estado del proyecto:", errorMessage);
+      alert(errorMessage);
     }
   };
 

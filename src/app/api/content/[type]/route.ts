@@ -4,6 +4,7 @@ import connect from '@/lib/db';
 import { BlogPost } from '@/models/BlogPost';
 import Project from '@/models/Project';
 import '@/models/User';
+import { Model, Document } from 'mongoose';
 
 export async function GET(
   request: Request,
@@ -40,7 +41,7 @@ export async function GET(
     const Model = type === 'blog' ? BlogPost : Project;
     const populateOptions = { path: 'author', select: 'name profileImg' };
 
-    const data = await (Model as any).find({ isDeleted: false })
+    const data = await (Model as Model<Document>).find({ isDeleted: false })
       .select('-content -__v')
       .skip(skip)
       .limit(limit)
@@ -48,7 +49,7 @@ export async function GET(
       .populate(populateOptions)
       .lean();
 
-    const total = await (Model as any).countDocuments({ isDeleted: false });
+    const total = await (Model as Model<Document>).countDocuments({ isDeleted: false });
 
     const response = NextResponse.json({
       data,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getCoreRowModel,
   useReactTable,
@@ -44,7 +44,7 @@ export function UsersTable() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDeleteId, setUserToDeleteId] = useState<string | null>(null);
 
-  const fetchUsers = async (page: number, limit: number, search: string) => {
+  const fetchUsers = useCallback(async (page: number, limit: number, search: string) => {
     try {
       setLoading(true);
       const response = await fetch(
@@ -75,7 +75,7 @@ export function UsersTable() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (!pagination) return;
@@ -86,7 +86,7 @@ export function UsersTable() {
     fetchUsers(pagination.page, pagination.limit, debouncedSearch)
       .catch(console.error)
       .finally(() => setSearchLoading(false));
-  }, [debouncedSearch, pagination?.page, pagination?.limit, session?.user?.id]);
+  }, [debouncedSearch, pagination.page, pagination.limit, fetchUsers]);
 
   const handlePageChange = async (newPage: number) => {
     setPaginationLoading(true);
@@ -125,9 +125,10 @@ export function UsersTable() {
       }
 
       fetchUsers(pagination.page, pagination.limit, debouncedSearch);
-    } catch (error: any) {
-      console.error("Error al eliminar el usuario:", error.message);
-      alert(error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al eliminar el usuario';
+      console.error("Error al eliminar el usuario:", errorMessage);
+      alert(errorMessage);
     } finally {
       setIsDeleteModalOpen(false);
       setUserToDeleteId(null);
@@ -152,9 +153,10 @@ export function UsersTable() {
       }
 
       fetchUsers(pagination.page, pagination.limit, debouncedSearch);
-    } catch (error: any) {
-      console.error("Error al actualizar el estado del usuario:", error.message);
-      alert(error.message);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Error al actualizar el estado del usuario';
+      console.error("Error al actualizar el estado del usuario:", errorMessage);
+      alert(errorMessage);
     }
   };
 

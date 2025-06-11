@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connect from "@/lib/db";
 import { User } from "@/models/User";
 import { Model } from "mongoose";
@@ -13,7 +13,7 @@ type SessionUser = {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'editor';
 };
 
 // Update validation schema
@@ -43,7 +43,7 @@ export async function GET(request: Request) {
 
     await connect();
 
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: "i" } },

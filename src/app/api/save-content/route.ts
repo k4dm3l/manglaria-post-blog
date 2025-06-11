@@ -17,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     // Get the user ID from the session
-    const userId = (session.user as any).id;
+    const userId = (session.user as { id: string }).id;
     if (!userId) {
       return NextResponse.json(
         { error: "User ID not found in session" },

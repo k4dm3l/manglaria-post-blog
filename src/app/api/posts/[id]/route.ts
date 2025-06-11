@@ -5,11 +5,12 @@ import { Model } from 'mongoose';
 import { IBlogPost } from '@/types/blog';
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: Request, // Cambiado a Request
+  // { params }: { params: { id: string } } // Formato corregido
 ) {
   try {
-    const post = await (BlogPost as Model<IBlogPost>).findById(params.id);
+    const { id } = await request.json();
+    const post = await (BlogPost as Model<IBlogPost>).findById(id);
     
     if (!post) {
       return NextResponse.json(
@@ -18,12 +19,11 @@ export async function DELETE(
       );
     }
 
-    // Delete image from Cloudinary if it exists
     if (post.imagePublicId) {
       await deleteImage(post.imagePublicId);
     }
 
-    await (BlogPost as Model<IBlogPost>).findByIdAndDelete(params.id);
+    await (BlogPost as Model<IBlogPost>).findByIdAndDelete(id);
 
     return NextResponse.json({ message: 'Post deleted successfully' });
   } catch (error) {
@@ -33,4 +33,4 @@ export async function DELETE(
       { status: 500 }
     );
   }
-} 
+}

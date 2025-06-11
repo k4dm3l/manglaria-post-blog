@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import { authOptions } from "../../auth/[...nextauth]/route";
+import { authOptions } from "@/lib/auth";
 import connect from "@/lib/db";
 import { User } from "@/models/User";
 import { Model } from "mongoose";
@@ -12,7 +12,7 @@ type SessionUser = {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'editor';
 };
 
 // Update validation schema for partial updates
@@ -25,9 +25,10 @@ const updateUserSchema = z.object({
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     if (!session) {
       return NextResponse.json(
@@ -61,7 +62,7 @@ export async function PUT(
     await connect();
 
     const updatedUser = await (User as Model<IUser>).findByIdAndUpdate(
-      params.id,
+      id,
       { $set: userData },
       { new: true }
     );

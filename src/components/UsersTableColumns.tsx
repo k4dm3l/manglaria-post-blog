@@ -21,6 +21,59 @@ export type User = {
   email: string;
   role: string;
   active: boolean;
+}
+
+// Active status cell component
+const ActiveStatusCell = ({ user, handleToggleActive }: { user: User; handleToggleActive: (userId: string, active: boolean) => void }) => {
+  const { data: session } = useSession();
+
+  if (session?.user?.role === "admin") {
+    return (
+      <Switch
+        checked={user.active}
+        onCheckedChange={(checked) => handleToggleActive(user._id, checked)}
+      />
+    );
+  }
+
+  return (
+    <Badge variant={user.active ? "default" : "destructive"}>
+      {user.active ? "Activo" : "Inactivo"}
+    </Badge>
+  );
+};
+
+// Actions cell component  
+const ActionsCell = ({ user, handleEdit, handleDelete }: { user: User; handleEdit: (user: User) => void; handleDelete: (userId: string) => void }) => {
+  const { data: session } = useSession();
+
+  if (session?.user?.role !== "admin") {
+    return null;
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Abrir menú</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => handleEdit(user)}>
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handleDelete(user._id)}
+          disabled={user.role === "admin"}
+        >
+          Eliminar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
 };
 
 export const columns = (
@@ -54,58 +107,15 @@ export const columns = (
     accessorKey: "active",
     header: "Estado",
     cell: ({ row }) => {
-      const { data: session } = useSession();
       const user = row.original;
-
-      if (session?.user?.role === "admin") {
-        return (
-          <Switch
-            checked={user.active}
-            onCheckedChange={(checked) => handleToggleActive(user._id, checked)}
-          />
-        );
-      }
-
-      return (
-        <Badge variant={user.active ? "default" : "destructive"}>
-          {user.active ? "Activo" : "Inactivo"}
-        </Badge>
-      );
+      return <ActiveStatusCell user={user} handleToggleActive={handleToggleActive} />;
     },
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const { data: session } = useSession();
       const user = row.original;
-
-      if (session?.user?.role !== "admin") {
-        return null;
-      }
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleEdit(user)}>
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() => handleDelete(user._id)}
-              disabled={user.role === "admin"}
-            >
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return <ActionsCell user={user} handleEdit={handleEdit} handleDelete={handleDelete} />;
     },
   },
 ];

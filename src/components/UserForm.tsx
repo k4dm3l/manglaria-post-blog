@@ -101,8 +101,8 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
       }
 
       onSuccess();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
     }

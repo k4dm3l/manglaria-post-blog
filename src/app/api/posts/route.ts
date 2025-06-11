@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
     await connect();
 
-    const query: any = { isDeleted: false };
+    const query: Record<string, unknown> = { isDeleted: false };
     if (search) {
       query.$or = [
         { title: { $regex: search, $options: "i" } },

@@ -33,6 +33,61 @@ export type Project = {
   slug?: string;
 }
 
+// Feed cell component
+const FeedCell = ({ project, handleToggleDelete }: { project: Project; handleToggleDelete: (id: string, isDeleted: boolean) => void }) => {
+  const { data: session } = useSession();
+
+  if (session?.user.role === "admin") {
+    return (
+      <Switch
+        checked={!project.isDeleted}
+        onCheckedChange={(checked) => handleToggleDelete(project._id, !checked)}
+      />
+    );
+  }
+
+  return (
+    <Badge variant={project.isDeleted ? "destructive" : "default"}>
+      {project.isDeleted ? "Privado" : "Publico"}
+    </Badge>
+  );
+};
+
+// Actions cell component
+const ActionsCell = ({ project }: { project: Project }) => {
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  if (session?.user?.role !== "admin") {
+    return null;
+  }
+
+  const handleEdit = () => {
+    router.push(`/editor/projects/${project._id}`);
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-8 w-8 p-0">
+          <span className="sr-only">Abrir menú</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={handleEdit}>
+          Editar
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleEdit} disabled>
+          Eliminar (Next Feature)
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 export const columns = (
   handleToggleDelete: (projectId: string, isDeleted: boolean) => void,
 ): ColumnDef<Project>[] => [
@@ -70,60 +125,15 @@ export const columns = (
     accessorKey: "isDeleted",
     header: "Feed",
     cell: ({ row }) => {
-      const { data: session } = useSession();
       const project = row.original;
-
-      if (session?.user.role === "admin") {
-        return (
-          <Switch
-            checked={!project.isDeleted}
-            onCheckedChange={(checked) => handleToggleDelete(project._id, !checked)}
-          />
-        );
-      }
-
-      return (
-        <Badge variant={project.isDeleted ? "destructive" : "default"}>
-          {project.isDeleted ? "Privado" : "Publico"}
-        </Badge>
-      );
+      return <FeedCell project={project} handleToggleDelete={handleToggleDelete} />;
     },
   },
   {
     id: "actions",
     cell: ({ row }) => {
-      const { data: session } = useSession();
       const project = row.original;
-      const router = useRouter();
-
-      if (session?.user?.role !== "admin") {
-        return null;
-      }
-
-      const handleEdit = () => {
-        router.push(`/editor/projects/${project._id}`);
-      };
-
-      return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleEdit}>
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleEdit} disabled>
-              Eliminar (Next Feature)
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      );
+      return <ActionsCell project={project} />;
     },
   },
 ]

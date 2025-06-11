@@ -61,7 +61,7 @@ export default function EditPostPage() {
     };
 
     loadData();
-  }, [type, params.slug]);
+  }, [type, params.slug, params.type]);
 
   const handleSave = async (data: {
     type: "blogs" | "projects";
@@ -79,7 +79,11 @@ export default function EditPostPage() {
         throw new Error("Tipo o slug no válido");
       }
 
-      const response = await fetch(`/api/${type}/${params.slug}`, {
+      const endpoint = type === "projects" 
+        ? `/api/projects/${params.slug}/update`
+        : `/api/${type}/${params.slug}`;
+
+      const response = await fetch(endpoint, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -87,14 +91,17 @@ export default function EditPostPage() {
         body: JSON.stringify(data),
       });
 
+      const result = await response.json();
+
       if (!response.ok) {
-        throw new Error("Error al guardar los cambios");
+        throw new Error(result.error || "Error al guardar los cambios");
       }
 
       router.push(`/${type}`);
     } catch (err) {
-      setError("Error al guardar los cambios");
-      console.error(err);
+      console.error("Error saving content:", err);
+      setError(err instanceof Error ? err.message : "Error al guardar los cambios");
+      throw err; // Re-throw to let the MarkdownUploader handle the error
     }
   };
 

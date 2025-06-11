@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getCoreRowModel,
   useReactTable,
@@ -45,7 +45,7 @@ export function BlogPostTable() {
   const debouncedSearch = useDebounce(search, 300);
   const router = useRouter();
 
-  const fetchBlogPosts = async (page: number, limit: number, search: string) => {
+  const fetchBlogPosts = useCallback(async (page: number, limit: number, search: string) => {
     try {
       setLoading(true);
       const response = await fetch(
@@ -55,21 +55,32 @@ export function BlogPostTable() {
         throw new Error('Failed to fetch blog posts');
       }
       const result = await response.json();
-      setData(result.data);
-      setPagination(result.pagination);
+      setData(result.data.items);
+      setPagination({
+        items: result.data.items,
+        total: result.data.total,
+        page: result.data.page,
+        limit: result.data.limit,
+        totalPages: result.data.totalPages,
+        hasNextPage: result.data.page < result.data.totalPages,
+        hasPreviousPage: result.data.page > 1
+      });
     } catch (error) {
       console.error("Error fetching Blog Posts:", error);
       throw error;
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    if (debouncedSearch !== search) {
+      setSearchLoading(true);
+    }
     fetchBlogPosts(pagination.page, pagination.limit, debouncedSearch)
       .catch(console.error)
       .finally(() => setSearchLoading(false));
-  }, [debouncedSearch, pagination.page, pagination.limit]);
+  }, [debouncedSearch, pagination.page, pagination.limit, fetchBlogPosts, search]);
 
   const handlePageChange = async (newPage: number) => {
     setPaginationLoading(true);
@@ -96,9 +107,9 @@ export function BlogPostTable() {
       }
 
       await fetchBlogPosts(pagination.page, pagination.limit, debouncedSearch);
-    } catch (error: any) {
-      console.error("Error al actualizar el estado del blog post:", error.message);
-      alert(error.message);
+    } catch (error: unknown) {
+      console.error("Error al actualizar el estado del blog post:", error instanceof Error ? error.message : 'Unknown error');
+      alert(error instanceof Error ? error.message : 'Unknown error');
     }
   };
 

@@ -23,7 +23,7 @@ export async function schedulePost(postId: string, scheduledFor: Date) {
   try {
     await connectToDatabase();
     
-    const post = await BlogPost.findByIdAndUpdate(
+    const post = await (BlogPost as Model<IBlogPost>).findByIdAndUpdate(
       postId,
       {
         scheduledFor,
