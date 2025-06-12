@@ -7,12 +7,32 @@ import { withRateLimit } from "@/lib/rate-limit";
 import { rateLimiters } from "@/lib/rate-limit";
 import { Model, Types } from "mongoose";
 
-// Add legal documents rate limiter
-const legalDocumentsLimiter = rateLimiters.api; // Using the general API rate limiter for now
+const legalDocumentsLimiter = rateLimiters.api;
 
-export async function GET() {
+export async function GET(request: Request) {
   return withRateLimit(legalDocumentsLimiter, async () => {
     try {
+      const authHeader = request.headers.get("authorization");
+      const token = authHeader?.split(" ")[1];
+      
+      if (token === process.env.CONTENT_API_TOKEN) {
+        await connect();
+        const LegalDocumentsModel = LegalDocuments as Model<ILegalDocuments>;
+        const documents = await LegalDocumentsModel.findOne();
+
+        if (!documents) {
+          return NextResponse.json({
+            chamberOfCommerce: "",
+            financialStatementsAssembly: "",
+            surplusCertificate: "",
+            bylaws: "",
+            financialStatement: "",
+          });
+        }
+
+        return NextResponse.json(documents);
+      }
+
       const session = await getServerSession(authOptions);
       if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
