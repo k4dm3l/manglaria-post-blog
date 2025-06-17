@@ -26,10 +26,11 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
       }
     } else {
+      console.log("getServerSession");
       session = await getServerSession(authOptions);
-      
+      console.log("session", session);
       if (!session?.user) {
-        return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+        return NextResponse.json({ error: "No autorizado session" }, { status: 401 });
       }
     }
 
