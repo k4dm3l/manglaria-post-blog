@@ -26,6 +26,9 @@ export default function DashboardPage() {
         <Link href="/projects">
           <Button className="w-full">Gestionar Proyectos</Button>
         </Link>
+        <Link href="/legal-documents">
+          <Button className="w-full">Gestionar Documentos Legales</Button>
+        </Link>
       </div>
     </div>
   );

@@ -31,7 +31,8 @@ export default function Navigation() {
     pathname?.startsWith("/editor") ||
     pathname?.startsWith("/users") ||
     pathname?.startsWith("/blogs") ||
-    pathname?.startsWith("/projects");
+    pathname?.startsWith("/projects") ||
+    pathname?.startsWith("/legal-documents");
 
   if (!session || !isProtectedRoute) return null;
 
