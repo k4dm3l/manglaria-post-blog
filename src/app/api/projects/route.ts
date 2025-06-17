@@ -1,7 +1,7 @@
 import Project, { IProject } from "@/models/Project";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { authOptions } from "@/lib/auth";
 import { headers } from "next/headers";
 import { validateToken } from '@/lib/auth';
 import connect from "@/lib/db";
@@ -15,6 +15,10 @@ export async function GET(request: Request) {
     const authHeader = headersList.get("authorization");
     let session = null;
 
+    console.log("Environment:", process.env.NODE_ENV);
+    console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+    console.log("Auth Header:", authHeader);
+
     if (authHeader?.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
       if (!token) {
@@ -26,10 +30,12 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "No autorizado" }, { status: 401 });
       }
     } else {
-      console.log("getServerSession");
+      console.log("Attempting to get server session...");
       session = await getServerSession(authOptions);
-      console.log("session", session);
+      console.log("Session result:", session);
+      
       if (!session?.user) {
+        console.log("No session or user found");
         return NextResponse.json({ error: "No autorizado session" }, { status: 401 });
       }
     }
@@ -80,7 +86,7 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "No user found" }, { status: 400 });
+    console.error("Error in GET /api/projects:", error);
+    return NextResponse.json({ error: "Internal server error", details: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
 }

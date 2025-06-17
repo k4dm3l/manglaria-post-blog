@@ -8,6 +8,8 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("NEXTAUTH_SECRET is not defined");
 }
 
+const isProduction = process.env.NODE_ENV === "production";
+
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -72,20 +74,21 @@ export const authOptions: AuthOptions = {
   },
   cookies: {
     sessionToken: {
-      name: process.env.NODE_ENV === "production" 
+      name: isProduction 
         ? "__Secure-next-auth.session-token" 
         : "next-auth.session-token",
       options: {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: process.env.NODE_ENV === "production",
-        domain: process.env.NODE_ENV === "production" 
+        secure: isProduction,
+        domain: isProduction 
           ? process.env.NEXTAUTH_URL?.replace(/^https?:\/\//, '') 
           : undefined,
       }
     }
   },
+  debug: isProduction,
   secret: process.env.NEXTAUTH_SECRET,
 };
 
