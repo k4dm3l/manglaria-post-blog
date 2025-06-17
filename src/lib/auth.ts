@@ -4,6 +4,10 @@ import { User } from "@/models/User";
 import connect from "@/lib/db";
 import bcrypt from "bcryptjs";
 
+if (!process.env.NEXTAUTH_SECRET) {
+  throw new Error("NEXTAUTH_SECRET is not defined");
+}
+
 export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
@@ -35,7 +39,8 @@ export const authOptions: AuthOptions = {
           _id: user._id.toString(),
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role as 'admin' | 'editor',
+          profileImg: user.profileImg || "",
         } as const;
       }
     })
@@ -45,13 +50,15 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.role = user.role;
         token.id = user.id;
+        token.profileImg = user.profileImg;
       }
       return token;
     },
     async session({ session, token }) {
       if (session?.user) {
-        (session.user as { role?: string; _id?: string }).role = token.role as string;
-        (session.user as { role?: string; _id?: string })._id = token.id as string;
+        session.user.role = token.role as 'admin' | 'editor';
+        session.user.id = token.id as string;
+        session.user.profileImg = token.profileImg as string;
       }
       return session;
     }
@@ -61,8 +68,25 @@ export const authOptions: AuthOptions = {
   },
   session: {
     strategy: "jwt",
+    maxAge: 8 * 60 * 60, // 8 hours
   },
-  secret: process.env.NEXTAUTH_SECRET || "fallback-secret-key",
+  cookies: {
+    sessionToken: {
+      name: process.env.NODE_ENV === "production" 
+        ? "__Secure-next-auth.session-token" 
+        : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+        domain: process.env.NODE_ENV === "production" 
+          ? process.env.NEXTAUTH_URL?.replace(/^https?:\/\//, '') 
+          : undefined,
+      }
+    }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
 };
 
 import jwt from "jsonwebtoken";
