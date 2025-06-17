@@ -2,7 +2,7 @@ import { BlogPost } from "@/models/BlogPost";
 import { IBlogPost } from "@/types/blog";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { authOptions, validateToken } from "@/lib/auth";
 import { headers } from "next/headers";
 import connect from "@/lib/db";
 import { Model } from "mongoose";
@@ -23,16 +23,49 @@ interface PopulatedBlogPost extends Omit<IBlogPost, 'author'> {
 
 export async function GET(request: Request): Promise<NextResponse> {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+    console.log("Environment:", process.env.NODE_ENV);
+    console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+
+    const headersList = await headers();
+    const authHeader = headersList.get("authorization");
+    console.log("Auth Header:", authHeader);
+
+    let session = null;
+    if (authHeader?.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      if (!token) {
+        console.log("No token found in Bearer header");
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+      session = await validateToken(token);
+      
+      if (!session) {
+        console.log("Invalid token");
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+    } else {
+      console.log("Attempting to get server session...");
+      session = await getServerSession(authOptions);
+      console.log("Session result:", session);
+      
+      if (!session?.user) {
+        console.log("No session or user found");
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
     }
 
-    const user = session.user as { role: string };
+    const user = (session as { user: { role: string } }).user;
     if (user.role !== "admin") {
+      console.log("User role is not admin:", user.role);
       return NextResponse.json(
         { error: "Forbidden: Admin access required" },
         { status: 403 }
@@ -45,6 +78,8 @@ export async function GET(request: Request): Promise<NextResponse> {
     const limit = parseInt(searchParams.get("limit") || "10");
     const search = searchParams.get("search") || "";
 
+    console.log("Query params:", { page, limit, search });
+
     const query = search
       ? {
           $or: [
@@ -55,6 +90,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       : {};
 
     const total = await (BlogPost as Model<IBlogPost>).countDocuments(query);
+    console.log("Total documents found:", total);
+
     const blogPosts = (await (BlogPost as Model<IBlogPost>)
       .find(query)
       .sort({ createdAt: -1 })
@@ -66,6 +103,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         model: "User",
       })
       .lean()) as unknown as PopulatedBlogPost[];
+
+    console.log("Blog posts retrieved:", blogPosts.length);
 
     const formattedBlogPosts = blogPosts.map((post) => ({
       ...post,
