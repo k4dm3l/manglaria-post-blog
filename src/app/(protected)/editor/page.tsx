@@ -1,11 +1,18 @@
-import { auth } from "../../auth";
+"use client";
+
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import MarkdownUploader from "@/components/MarkdownUploader";
+import { LoadingPage } from "@/components/ui/loading";
 
-export default async function EditorPage() {
-  const session = await auth();
+export default function EditorPage() {
+  const { status } = useSession();
 
-  if (!session?.user) {
+  if (status === "loading") {
+    return <LoadingPage />;
+  }
+
+  if (status === "unauthenticated") {
     redirect("/login?error=Unauthorized");
   }
 
