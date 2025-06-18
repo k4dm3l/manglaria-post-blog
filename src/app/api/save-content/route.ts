@@ -3,13 +3,19 @@ import Project from "@/models/Project";
 import { BlogPost } from "@/models/BlogPost";
 import connect from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { authOptions } from "@/lib/auth";
 import { Types } from "mongoose";
 
 export async function POST(req: Request) {
   try {
+    console.log("Environment:", process.env.NODE_ENV);
+    console.log("NEXTAUTH_URL:", process.env.NEXTAUTH_URL);
+
     const session = await getServerSession(authOptions);
+    console.log("Session result:", session);
+    
     if (!session) {
+      console.log("No session found");
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }
@@ -19,11 +25,14 @@ export async function POST(req: Request) {
     // Get the user ID from the session
     const userId = (session.user as { id: string }).id;
     if (!userId) {
+      console.log("No user ID found in session");
       return NextResponse.json(
         { error: "User ID not found in session" },
         { status: 401 }
       );
     }
+
+    console.log("User ID:", userId);
 
     await connect();
 
@@ -37,6 +46,8 @@ export async function POST(req: Request) {
       published,
       scheduledFor
     } = await req.json();
+
+    console.log("Content type:", type);
 
     if (type === "blog") {
       const blogPostData = {

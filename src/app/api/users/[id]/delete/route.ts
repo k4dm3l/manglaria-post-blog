@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { User } from "@/models/User";
 import connect from "@/lib/db";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { authOptions } from "@/lib/auth";
 import { Model } from "mongoose";
 import { IUser } from "@/models/User";
 

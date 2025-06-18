@@ -5,7 +5,7 @@ import connect from "@/lib/db";
 import { headers } from "next/headers";
 import { validateToken } from '@/lib/auth';
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/api/auth/[...nextauth]/auth";
+import { authOptions } from "@/lib/auth";
 import jwt from "jsonwebtoken";
 import { Model } from "mongoose";
 import { IUser } from "@/models/User";
