@@ -7,21 +7,29 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface LegalDocuments {
-  chamberOfCommerce: string;
-  financialStatementsAssembly: string;
-  surplusCertificate: string;
-  bylaws: string;
-  financialStatement: string;
+  financialStatementCorporacionManglaria: string;
+  certificateOfLegalRequirements: string;
+  actOfConstitutionCorporacionManglaria: string;
+  certificateOfExistence: string;
+  actOfGeneralAssembly: string;
+  tributaryStatementsCorporacionManglaria: string;
+  backgroundCheckCertificate: string;
+  certificateOfManagmentPositions: string;
+  managementReport: string;
 }
 
 export default function LegalDocumentsPage() {
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState<LegalDocuments>({
-    chamberOfCommerce: "",
-    financialStatementsAssembly: "",
-    surplusCertificate: "",
-    bylaws: "",
-    financialStatement: "",
+    financialStatementCorporacionManglaria: "",
+    certificateOfLegalRequirements: "",
+    actOfConstitutionCorporacionManglaria: "",
+    certificateOfExistence: "",
+    actOfGeneralAssembly: "",
+    tributaryStatementsCorporacionManglaria: "",
+    backgroundCheckCertificate: "",
+    certificateOfManagmentPositions: "",
+    managementReport: "",
   });
 
   useEffect(() => {
@@ -31,11 +39,15 @@ export default function LegalDocumentsPage() {
         if (!response.ok) throw new Error("Failed to fetch documents");
         const data = await response.json();
         setDocuments({
-          chamberOfCommerce: data.chamberOfCommerce || "",
-          financialStatementsAssembly: data.financialStatementsAssembly || "",
-          surplusCertificate: data.surplusCertificate || "",
-          bylaws: data.bylaws || "",
-          financialStatement: data.financialStatement || "",
+          financialStatementCorporacionManglaria: data.financialStatement || "",
+          certificateOfLegalRequirements: data.certificateOfLegalRequirements || "",
+          actOfConstitutionCorporacionManglaria: data.actOfConstitutionCorporacionManglaria || "",
+          certificateOfExistence: data.certificateOfExistence || "",
+          actOfGeneralAssembly: data.actOfGeneralAssembly || "",
+          tributaryStatementsCorporacionManglaria: data.tributaryStatementsCorporacionManglaria || "",
+          backgroundCheckCertificate: data.backgroundCheckCertificate || "",
+          certificateOfManagmentPositions: data.certificateOfManagmentPositions || "",
+          managementReport: data.managementReport || "",
         });
       } catch (error) {
         console.error("Error loading legal documents:", error);
@@ -86,53 +98,93 @@ export default function LegalDocumentsPage() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="chamberOfCommerce">Camara de Comercio</Label>
+                  <Label htmlFor="financialStatementCorporacionManglaria">Estado Financiero de la Corporación Manglaria</Label>
                   <Input
-                    id="chamberOfCommerce"
-                    name="chamberOfCommerce"
-                    value={documents.chamberOfCommerce}
+                    id="financialStatementCorporacionManglaria"
+                    name="financialStatementCorporacionManglaria"
+                    value={documents.financialStatementCorporacionManglaria}
                     onChange={handleChange}
-                    placeholder="URL de la Camara de Comercio"
+                    placeholder="URL del Estado Financiero de la Corporación Manglaria"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="financialStatementsAssembly">Asamblea de Estados Financieros</Label>
+                  <Label htmlFor="certificateOfLegalRequirements">Certificado de Requisitos Legales</Label>
                   <Input
-                    id="financialStatementsAssembly"
-                    name="financialStatementsAssembly"
-                    value={documents.financialStatementsAssembly}
+                    id="certificateOfLegalRequirements"
+                    name="certificateOfLegalRequirements"
+                    value={documents.certificateOfLegalRequirements}
                     onChange={handleChange}
-                    placeholder="URL de la Asamblea de Estados Financieros"
+                    placeholder="URL del Certificado de Requisitos Legales"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="surplusCertificate">Certificado de Superávit</Label>
+                  <Label htmlFor="actOfConstitutionCorporacionManglaria">Acta de Constitución de la Corporación Manglaria</Label>
                   <Input
-                    id="surplusCertificate"
-                    name="surplusCertificate"
-                    value={documents.surplusCertificate}
+                    id="actOfConstitutionCorporacionManglaria"
+                    name="actOfConstitutionCorporacionManglaria"
+                    value={documents.actOfConstitutionCorporacionManglaria}
                     onChange={handleChange}
-                    placeholder="URL del Certificado de Superávit"
+                    placeholder="URL de la Acta de Constitución de la Corporación Manglaria"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="bylaws">Estatutos</Label>
+                  <Label htmlFor="certificateOfExistence">Certificado de Existencia</Label>
                   <Input
-                    id="bylaws"
-                    name="bylaws"
-                    value={documents.bylaws}
+                    id="certificateOfExistence"
+                    name="certificateOfExistence"
+                    value={documents.certificateOfExistence}
                     onChange={handleChange}
-                    placeholder="URL de los Estatutos"
+                    placeholder="URL del Certificado de Existencia"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="financialStatement">Estado Financiero</Label>
+                  <Label htmlFor="actOfGeneralAssembly">Acta de General Asamblea</Label>
                   <Input
-                    id="financialStatement"
-                    name="financialStatement"
-                    value={documents.financialStatement}
+                    id="actOfGeneralAssembly"
+                    name="actOfGeneralAssembly"
+                    value={documents.actOfGeneralAssembly}
                     onChange={handleChange}
-                    placeholder="URL del Estado Financiero"
+                    placeholder="URL de la Acta de General Asamblea"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="tributaryStatementsCorporacionManglaria">Declaración Tributaria de la Corporación Manglaria</Label>
+                  <Input
+                    id="tributaryStatementsCorporacionManglaria"
+                    name="tributaryStatementsCorporacionManglaria"
+                    value={documents.tributaryStatementsCorporacionManglaria}
+                    onChange={handleChange}
+                    placeholder="URL de la Declaración Tributaria de la Corporación Manglaria"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="backgroundCheckCertificate">Certificado de Verificación de Antecedentes</Label>
+                  <Input
+                    id="backgroundCheckCertificate"
+                    name="backgroundCheckCertificate"
+                    value={documents.backgroundCheckCertificate}
+                    onChange={handleChange}
+                    placeholder="URL del Certificado de Verificación de Antecedentes"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="certificateOfManagmentPositions">Certificado de Posiciones de Gestión</Label>
+                  <Input
+                    id="certificateOfManagmentPositions"
+                    name="certificateOfManagmentPositions"
+                    value={documents.certificateOfManagmentPositions}
+                    onChange={handleChange}
+                    placeholder="URL del Certificado de Posiciones de Gestión"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="managementReport">Reporte de Gestión</Label>
+                  <Input
+                    id="managementReport"
+                    name="managementReport"
+                    value={documents.managementReport}
+                    onChange={handleChange}
+                    placeholder="URL del Reporte de Gestión"
                   />
                 </div>
               </div>
