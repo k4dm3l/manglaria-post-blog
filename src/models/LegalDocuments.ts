@@ -1,11 +1,15 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
 
 export interface ILegalDocuments extends Document {
-  chamberOfCommerce?: string;
-  financialStatementsAssembly?: string;
-  surplusCertificate?: string;
-  bylaws?: string;
-  financialStatement?: string;
+  financialStatementCorporacionManglaria?: string;
+  certificateOfLegalRequirements?: string;
+  actOfConstitutionCorporacionManglaria?: string;
+  certificateOfExistence?: string;
+  actOfGeneralAssembly?: string;
+  tributaryStatementsCorporacionManglaria?: string;
+  backgroundCheckCertificate?: string;
+  certificateOfManagmentPositions?: string;
+  managementReport?: string;
   updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -13,11 +17,15 @@ export interface ILegalDocuments extends Document {
 
 const legalDocumentsSchema = new Schema<ILegalDocuments>(
   {
-    chamberOfCommerce: { type: String, default: "" },
-    financialStatementsAssembly: { type: String, default: "" },
-    surplusCertificate: { type: String, default: "" },
-    bylaws: { type: String, default: "" },
-    financialStatement: { type: String, default: "" },
+    financialStatementCorporacionManglaria: { type: String, default: "" },
+    certificateOfLegalRequirements: { type: String, default: "" },
+    actOfConstitutionCorporacionManglaria: { type: String, default: "" },
+    certificateOfExistence: { type: String, default: "" },
+    actOfGeneralAssembly: { type: String, default: "" },
+    tributaryStatementsCorporacionManglaria: { type: String, default: "" },
+    backgroundCheckCertificate: { type: String, default: "" },
+    certificateOfManagmentPositions: { type: String, default: "" },
+    managementReport: { type: String, default: "" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: false },
   },
   { timestamps: true }

@@ -22,11 +22,15 @@ export async function GET(request: Request) {
 
         if (!documents) {
           return NextResponse.json({
-            chamberOfCommerce: "",
-            financialStatementsAssembly: "",
-            surplusCertificate: "",
-            bylaws: "",
-            financialStatement: "",
+            financialStatementCorporacionManglaria: "",
+            certificateOfLegalRequirements: "",
+            actOfConstitutionCorporacionManglaria: "",
+            certificateOfExistence: "",
+            actOfGeneralAssembly: "",
+            tributaryStatementsCorporacionManglaria: "",
+            backgroundCheckCertificate: "",
+            certificateOfManagmentPositions: "",
+            managementReport: "",
           });
         }
 
@@ -44,11 +48,15 @@ export async function GET(request: Request) {
 
       if (!documents) {
         return NextResponse.json({
-          chamberOfCommerce: "",
-          financialStatementsAssembly: "",
-          surplusCertificate: "",
-          bylaws: "",
-          financialStatement: "",
+          financialStatementCorporacionManglaria: "",
+          certificateOfLegalRequirements: "",
+          actOfConstitutionCorporacionManglaria: "",
+          certificateOfExistence: "",
+          actOfGeneralAssembly: "",
+          tributaryStatementsCorporacionManglaria: "",
+          backgroundCheckCertificate: "",
+          certificateOfManagmentPositions: "",
+          managementReport: "",
         });
       }
 
@@ -79,11 +87,15 @@ export async function PUT(request: Request) {
       // Solo incluir campos que están presentes en el payload
       const updateData: Partial<ILegalDocuments> = {};
       const validFields: (keyof ILegalDocuments)[] = [
-        "chamberOfCommerce",
-        "financialStatementsAssembly",
-        "surplusCertificate",
-        "bylaws",
-        "financialStatement"
+        "financialStatementCorporacionManglaria",
+        "certificateOfLegalRequirements",
+        "actOfConstitutionCorporacionManglaria",
+        "certificateOfExistence",
+        "actOfGeneralAssembly",
+        "tributaryStatementsCorporacionManglaria",
+        "backgroundCheckCertificate",
+        "certificateOfManagmentPositions",
+        "managementReport"
       ];
 
       validFields.forEach(field => {
