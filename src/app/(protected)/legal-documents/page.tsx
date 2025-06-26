@@ -138,7 +138,7 @@ export default function LegalDocumentsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="actOfGeneralAssembly">Acta de General Asamblea</Label>
+                  <Label htmlFor="actOfGeneralAssembly">Acta de Asamblea General</Label>
                   <Input
                     id="actOfGeneralAssembly"
                     name="actOfGeneralAssembly"
@@ -148,7 +148,7 @@ export default function LegalDocumentsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="tributaryStatementsCorporacionManglaria">Declaración Tributaria de la Corporación Manglaria</Label>
+                  <Label htmlFor="tributaryStatementsCorporacionManglaria">Estatutos Tributarios Corporación Manglaria</Label>
                   <Input
                     id="tributaryStatementsCorporacionManglaria"
                     name="tributaryStatementsCorporacionManglaria"
@@ -158,7 +158,7 @@ export default function LegalDocumentsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="backgroundCheckCertificate">Certificado de Verificación de Antecedentes</Label>
+                  <Label htmlFor="backgroundCheckCertificate">Certificado de Antecedentes</Label>
                   <Input
                     id="backgroundCheckCertificate"
                     name="backgroundCheckCertificate"
@@ -168,7 +168,7 @@ export default function LegalDocumentsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="certificateOfManagmentPositions">Certificado de Posiciones de Gestión</Label>
+                  <Label htmlFor="certificateOfManagmentPositions">Certificado de Cargos Directivos</Label>
                   <Input
                     id="certificateOfManagmentPositions"
                     name="certificateOfManagmentPositions"
@@ -178,13 +178,13 @@ export default function LegalDocumentsPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="managementReport">Reporte de Gestión</Label>
+                  <Label htmlFor="managementReport">Ultimo Informe de Gestión</Label>
                   <Input
                     id="managementReport"
                     name="managementReport"
                     value={documents.managementReport}
                     onChange={handleChange}
-                    placeholder="URL del Reporte de Gestión"
+                    placeholder="URL del Informe de Gestión"
                   />
                 </div>
               </div>
