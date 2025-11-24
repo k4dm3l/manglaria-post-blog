@@ -238,6 +238,7 @@ export async function PUT(
           $set: {
             title,
             excerpt: description,
+            description,
             content,
             image,
             published,
