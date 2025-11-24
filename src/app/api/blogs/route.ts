@@ -80,11 +80,16 @@ export async function GET(request: Request): Promise<NextResponse> {
 
     console.log("Query params:", { page, limit, search });
 
+    // Escape special regex characters in search string
+    const escapeRegex = (str: string) => {
+      return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    };
+
     const query = search
       ? {
           $or: [
-            { title: { $regex: search, $options: "i" } },
-            { content: { $regex: search, $options: "i" } },
+            { title: { $regex: escapeRegex(search), $options: "i" } },
+            { content: { $regex: escapeRegex(search), $options: "i" } },
           ],
         }
       : {};
@@ -109,21 +114,22 @@ export async function GET(request: Request): Promise<NextResponse> {
     const formattedBlogPosts = blogPosts.map((post) => ({
       ...post,
       author: {
-        name: post.author.name || "Autor desconocido",
-        profileImg: post.author.profileImg || null,
+        name: post.author?.name || "Autor desconocido",
+        profileImg: post.author?.profileImg || null,
       },
     }));
 
     const totalPages = Math.ceil(total / limit);
 
-    // Cache the results
+    // Cache the results (non-blocking - errors are handled in setCache)
     const cacheKey = generateCacheKey(CACHE_PREFIX, {
       page,
       limit,
       search,
     });
 
-    await setCache(cacheKey, {
+    // Don't await - let it run in background, errors are handled in setCache
+    setCache(cacheKey, {
       data: formattedBlogPosts,
       pagination: {
         total,
@@ -133,7 +139,9 @@ export async function GET(request: Request): Promise<NextResponse> {
         hasNextPage: page < totalPages,
         hasPreviousPage: page > 1,
       },
-    }, CACHE_TTL);
+    }, CACHE_TTL).catch((error) => {
+      console.error("Failed to cache blog posts:", error);
+    });
 
     return NextResponse.json({
       success: true,
