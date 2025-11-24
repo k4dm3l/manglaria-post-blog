@@ -20,6 +20,6 @@ declare module 'ioredis' {
     on(event: 'connect', listener: () => void): this;
     on(event: 'ready', listener: () => void): this;
     on(event: 'close', listener: () => void): this;
-    on(event: string, listener: (...args: any[]) => void): this;
+    on(event: string, listener: (...args: unknown[]) => void): this;
   }
 } 
