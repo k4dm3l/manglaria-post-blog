@@ -7,6 +7,7 @@ declare module 'ioredis' {
     enableOfflineQueue?: boolean;
     lazyConnect?: boolean;
     connectTimeout?: number;
+    commandTimeout?: number;
   }
 
   export default class Redis extends EventEmitter {

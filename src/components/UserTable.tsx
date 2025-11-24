@@ -77,15 +77,19 @@ export function UsersTable() {
     }
   }, [session?.user?.id]);
 
+  // Show loading when search is typing but debounced value hasn't updated
   useEffect(() => {
-    if (!pagination) return;
-    
     if (debouncedSearch !== search) {
       setSearchLoading(true);
+    } else {
+      setSearchLoading(false);
     }
+  }, [debouncedSearch, search]);
+
+  // Fetch users when pagination or debounced search changes
+  useEffect(() => {
     fetchUsers(pagination.page, pagination.limit, debouncedSearch)
-      .catch(console.error)
-      .finally(() => setSearchLoading(false));
+      .catch(console.error);
   }, [debouncedSearch, pagination.page, pagination.limit, fetchUsers]);
 
   const handlePageChange = async (newPage: number) => {
