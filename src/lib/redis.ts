@@ -24,8 +24,8 @@ function getRedisClient(): Redis | null {
       redisUrl = `redis://${redisUrl}`;
     }
 
-    // Type assertion needed due to custom type definitions
-    redis = new (Redis as any)(redisUrl, {
+    // Create Redis instance with proper typing
+    redis = new Redis(redisUrl, {
       retryStrategy: (times: number) => {
         // Retry with exponential backoff, max 3 times
         if (times > 3) {
@@ -45,8 +45,7 @@ function getRedisClient(): Redis | null {
 
     // Handle connection errors gracefully - prevent unhandled errors
     // These event handlers must be set up before any connection attempt
-    // Using 'as any' because custom type definitions don't include EventEmitter methods
-    (redis as any).on('error', (error: Error) => {
+    redis.on('error', (error: Error) => {
       // Only log connection errors in development, or if they're not common connection issues
       const errorMessage = error.message || String(error);
       if (process.env.NODE_ENV === 'development' && 
@@ -57,19 +56,19 @@ function getRedisClient(): Redis | null {
       // Don't throw - just log the error
     });
 
-    (redis as any).on('connect', () => {
+    redis.on('connect', () => {
       if (process.env.NODE_ENV === 'development') {
         console.log('Redis connected successfully');
       }
     });
 
-    (redis as any).on('ready', () => {
+    redis.on('ready', () => {
       if (process.env.NODE_ENV === 'development') {
         console.log('Redis is ready');
       }
     });
 
-    (redis as any).on('close', () => {
+    redis.on('close', () => {
       // Don't log close events - they're normal during reconnection attempts
     });
 
@@ -98,8 +97,9 @@ function shouldAttemptRedisOperation(client: Redis | null): boolean {
   if (!client) {
     return false;
   }
-  // Check connection status
-  const status = (client as any).status;
+  // Check connection status - using type assertion for status property
+  // which exists on ioredis but isn't in our type definitions
+  const status = (client as Redis & { status?: string }).status;
   // 'ready' = connected and ready for commands
   // 'connect' = connecting (with offline queue, we can queue commands)
   // 'wait' = waiting to connect (with offline queue, we can queue commands)
