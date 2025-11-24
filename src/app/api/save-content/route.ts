@@ -53,6 +53,7 @@ export async function POST(req: Request) {
       const blogPostData = {
         title,
         excerpt: description,
+        description,
         content,
         image,
         author: new Types.ObjectId(userId),
