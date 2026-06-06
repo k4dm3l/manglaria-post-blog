@@ -47,9 +47,16 @@ export async function POST(req: Request) {
       scheduledFor
     } = await req.json();
 
-    console.log("Content type:", type);
+    const normalizedType =
+      type === "blog" || type === "blogs"
+        ? "blog"
+        : type === "project" || type === "projects"
+          ? "project"
+          : null;
 
-    if (type === "blog") {
+    console.log("Content type:", type, "normalized:", normalizedType);
+
+    if (normalizedType === "blog") {
       const blogPostData = {
         title,
         excerpt: description,
@@ -73,7 +80,7 @@ export async function POST(req: Request) {
         data: savedPost,
         message: "Entrada de blog guardada exitosamente" 
       });
-    } else if (type === "projects") {
+    } else if (normalizedType === "project") {
       const newProject = new Project({
         title,
         description,
