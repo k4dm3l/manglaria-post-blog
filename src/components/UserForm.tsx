@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UI_COPY } from "@/constants/ui";
 
 interface UserFormProps {
   onSuccess: () => void;
@@ -101,8 +103,11 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
       }
 
       onSuccess();
+      toast.success(isEditMode ? UI_COPY.success.updated : UI_COPY.success.saved);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const message = err instanceof Error ? err.message : UI_COPY.errors.generic;
+      setError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -111,13 +116,14 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="flex flex-col items-center space-y-4">
-        <label className="relative group cursor-pointer">
+        <label className="relative group cursor-pointer" htmlFor="avatar-upload">
           <input
             type="file"
             accept="image/*"
             onChange={handleImageUpload}
             className="hidden"
             id="avatar-upload"
+            aria-label="Subir imagen de perfil"
           />
           <Avatar className="h-32 w-32 transition-opacity group-hover:opacity-80">
             <AvatarImage src={newProfileImg || profileImg} />
@@ -135,8 +141,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
         </label>
       </div>
       <div>
-        <Label>Nombre</Label>
+        <Label htmlFor="user-name">Nombre</Label>
         <Input
+          id="user-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -144,8 +151,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
         />
       </div>
       <div>
-        <Label>Email</Label>
+        <Label htmlFor="user-email">Email</Label>
         <Input
+          id="user-email"
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
@@ -154,9 +162,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
         />
       </div>
       <div>
-        <Label>Rol</Label>
+        <Label htmlFor="user-role">Rol</Label>
         <Select value={role} onValueChange={(value) => setRole(value)}>
-          <SelectTrigger>
+          <SelectTrigger id="user-role">
             <SelectValue placeholder="Selecciona un rol" />
           </SelectTrigger>
           <SelectContent>
@@ -166,8 +174,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
         </Select>
       </div>
       <div>
-        <Label>Contraseña</Label>
+        <Label htmlFor="user-password">Contraseña</Label>
         <Input
+          id="user-password"
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -176,8 +185,9 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
       </div>
       {!isEditMode && (
         <div>
-          <Label>Confirmar contraseña</Label>
+          <Label htmlFor="user-confirm-password">Confirmar contraseña</Label>
           <Input
+            id="user-confirm-password"
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -185,7 +195,11 @@ export function UserForm({ onSuccess, user }: UserFormProps) {
           />
         </div>
       )}
-      {error && <p className="text-red-500">{error}</p>}
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       <Button type="submit" disabled={isLoading}>
         {isLoading ? "Procesando..." : isEditMode ? "Actualizar usuario" : "Crear usuario"}
       </Button>

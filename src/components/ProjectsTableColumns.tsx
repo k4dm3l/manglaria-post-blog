@@ -25,6 +25,7 @@ export type Project = {
   _id: string;
   title: string;
   description: string;
+  image?: string;
   author: {
     name: string;
     profileImg: string;
@@ -63,7 +64,7 @@ const ActionsCell = ({ project }: { project: Project }) => {
   }
 
   const handleEdit = () => {
-    router.push(`/editor/projects/${project._id}`);
+    router.push(`/editor/projects/${project.slug ?? project._id}`);
   };
 
   return (

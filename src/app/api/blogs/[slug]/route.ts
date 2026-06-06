@@ -6,6 +6,7 @@ import { BlogPost } from "@/models/BlogPost";
 import { Model } from "mongoose";
 import { IBlogPost } from "@/types/blog";
 import { BlogPostResponse } from "@/types/api";
+import { buildSlugOrObjectIdFilter } from "@/lib/utils";
 import { z } from "zod";
 
 const updateStatusSchema = z.object({
@@ -29,12 +30,7 @@ export async function GET(
     await connect();
 
     const blogPost = await (BlogPost as Model<IBlogPost>)
-      .findOne({
-        $or: [
-          { slug: params.slug },
-          { _id: params.slug }
-        ]
-      })
+      .findOne(buildSlugOrObjectIdFilter(params.slug))
       .populate({
         path: 'author',
         select: 'name profileImg',
@@ -104,12 +100,7 @@ export async function PATCH(
 
       const updatedBlogPost = await (BlogPost as Model<IBlogPost>)
         .findOneAndUpdate(
-          {
-            $or: [
-              { slug: params.slug },
-              { _id: params.slug }
-            ]
-          },
+          buildSlugOrObjectIdFilter(params.slug),
           { 
             $set: { 
               isDeleted,
@@ -139,12 +130,7 @@ export async function PATCH(
 
     const blogPost = await (BlogPost as Model<IBlogPost>)
       .findOneAndUpdate(
-        {
-          $or: [
-            { slug: params.slug },
-            { _id: params.slug }
-          ]
-        },
+        buildSlugOrObjectIdFilter(params.slug),
         {
           title,
           content,
@@ -228,12 +214,7 @@ export async function PUT(
 
     const blogPost = await (BlogPost as Model<IBlogPost>)
       .findOneAndUpdate(
-        {
-          $or: [
-            { slug: params.slug },
-            { _id: params.slug }
-          ]
-        },
+        buildSlugOrObjectIdFilter(params.slug),
         {
           $set: {
             title,

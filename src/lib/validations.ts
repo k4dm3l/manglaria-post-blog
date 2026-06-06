@@ -40,23 +40,4 @@ export const paginationSchema = z.object({
   limit: z.number().int().min(1).max(100),
   search: z.string().optional(),
 });
-
-// API response types
-export type ApiResponse<T> = {
-  data: T;
-  error?: string;
-  status: number;
-  message?: string;
-};
-
-export type PaginatedApiResponse<T> = ApiResponse<T> & {
-  pagination: {
-    items: T[];
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-    hasNextPage: boolean;
-    hasPreviousPage: boolean;
-  };
-}; 
+ 

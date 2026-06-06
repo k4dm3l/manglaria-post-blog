@@ -3,12 +3,16 @@ import { headers } from 'next/headers';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
 import { getRedisClient } from './redis';
 
-// Create rate limiter instances for different endpoints
-// Returns null if Redis is not available (fail open)
-const createRateLimiter = (keyPrefix: string, points: number, duration: number) => {
+const createRateLimiter = (
+  keyPrefix: string,
+  points: number,
+  duration: number
+) => {
   const redis = getRedisClient();
   if (!redis) {
-    console.warn(`Rate limiter ${keyPrefix} disabled: Redis not available`);
+    if (process.env.NODE_ENV === 'development') {
+      console.warn(`Rate limiter ${keyPrefix} disabled: Redis not available`);
+    }
     return null;
   }
 
@@ -16,8 +20,8 @@ const createRateLimiter = (keyPrefix: string, points: number, duration: number) 
     return new RateLimiterRedis({
       storeClient: redis,
       keyPrefix,
-      points, // Number of requests
-      duration, // Per duration in seconds
+      points,
+      duration,
     });
   } catch (error) {
     console.error(`Failed to create rate limiter ${keyPrefix}:`, error);
@@ -25,22 +29,27 @@ const createRateLimiter = (keyPrefix: string, points: number, duration: number) 
   }
 };
 
-// Rate limiters for different endpoints
-// These may be null if Redis is not available
 export const rateLimiters = {
-  // General API rate limiter
-  api: createRateLimiter('api', 100, 60), // 100 requests per minute
-  // Blog posts specific rate limiter
-  blogs: createRateLimiter('blogs', 30, 60), // 30 requests per minute
-  // Auth specific rate limiter
-  auth: createRateLimiter('auth', 5, 60), // 5 requests per minute
+  api: createRateLimiter('api', 100, 60),
+  blogs: createRateLimiter('blogs', 30, 60),
+  auth: createRateLimiter('auth', 5, 60),
 };
+
+function isRateLimiterRejection(
+  error: unknown
+): error is { msBeforeNext: number } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'msBeforeNext' in error &&
+    typeof (error as { msBeforeNext: unknown }).msBeforeNext === 'number'
+  );
+}
 
 export async function rateLimit(
   limiter: RateLimiterRedis | null,
   identifier: string
 ): Promise<{ success: boolean; message?: string }> {
-  // If limiter is null (Redis not available), allow the request (fail open)
   if (!limiter) {
     return { success: true };
   }
@@ -49,16 +58,18 @@ export async function rateLimit(
     await limiter.consume(identifier);
     return { success: true };
   } catch (error) {
-    if (error instanceof Error) {
+    if (isRateLimiterRejection(error)) {
       return {
         success: false,
         message: 'Too many requests. Please try again later.',
       };
     }
-    return {
-      success: false,
-      message: 'Rate limit error',
-    };
+
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('Rate limit skipped due to store error:', error);
+    }
+
+    return { success: true };
   }
 }
 
@@ -66,7 +77,6 @@ export async function withRateLimit<T>(
   limiter: RateLimiterRedis | null,
   handler: () => Promise<T>
 ): Promise<T> {
-  // If limiter is null (Redis not available), skip rate limiting (fail open)
   if (!limiter) {
     return handler();
   }
@@ -80,11 +90,8 @@ export async function withRateLimit<T>(
 
   if (!result.success) {
     // @ts-expect-error: T may not match this shape, but this is only for error cases
-    return NextResponse.json(
-      { error: result.message },
-      { status: 429 }
-    );
+    return NextResponse.json({ error: result.message }, { status: 429 });
   }
 
   return handler();
-} 
+}

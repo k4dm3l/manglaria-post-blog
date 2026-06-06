@@ -1,4 +1,8 @@
+"use client";
+
 import { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { UI_COPY } from "@/constants/ui";
 
 interface Props {
   children: ReactNode;
@@ -33,21 +37,23 @@ export class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-          <h2 className="text-2xl font-bold">Something went wrong</h2>
-          <p className="text-muted-foreground">
-            {this.state.error?.message || "An unexpected error occurred"}
+        <div
+          className="flex min-h-[400px] flex-col items-center justify-center gap-4"
+          role="alert"
+        >
+          <h2 className="text-2xl font-bold">Algo salió mal</h2>
+          <p className="text-muted-foreground text-center max-w-md">
+            {this.state.error?.message || UI_COPY.errors.generic}
           </p>
-          <button
+          <Button
             onClick={() => this.setState({ hasError: false, error: null })}
-            className="rounded-md bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90"
           >
-            Try again
-          </button>
+            Reintentar
+          </Button>
         </div>
       );
     }
 
     return this.props.children;
   }
-} 
+}

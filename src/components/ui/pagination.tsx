@@ -1,7 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { PaginationResult } from "@/lib/pagination";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { UI_COPY } from "@/constants/ui";
+import { PaginationResult } from "@/lib/pagination";
 
 interface PaginationProps {
   pagination: PaginationResult<unknown>;
@@ -9,7 +10,11 @@ interface PaginationProps {
   onPageChange?: (page: number) => void;
 }
 
-export function Pagination({ pagination, className, onPageChange }: PaginationProps) {
+export function Pagination({
+  pagination,
+  className,
+  onPageChange,
+}: PaginationProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -27,22 +32,21 @@ export function Pagination({ pagination, className, onPageChange }: PaginationPr
     if (onPageChange) {
       onPageChange(page);
     } else {
-      router.push(
-        `${pathname}?${createQueryString("page", page.toString())}`,
-        { scroll: false }
-      );
+      router.push(`${pathname}?${createQueryString("page", page.toString())}`, {
+        scroll: false,
+      });
     }
   };
 
+  const start = (pagination.page - 1) * pagination.limit + 1;
+  const end = Math.min(pagination.page * pagination.limit, pagination.total);
+
   return (
-    <div className={`flex items-center justify-between ${className}`}>
-      <div className="flex items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          Showing {((pagination.page - 1) * pagination.limit) + 1} to{" "}
-          {Math.min(pagination.page * pagination.limit, pagination.total)} of{" "}
-          {pagination.total} results
-        </p>
-      </div>
+    <div className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between ${className ?? ""}`}>
+      <p className="text-sm text-muted-foreground">
+        {UI_COPY.pagination.showing} {start} {UI_COPY.pagination.of} {end}{" "}
+        {UI_COPY.pagination.of} {pagination.total} {UI_COPY.pagination.results}
+      </p>
       <div className="flex items-center gap-2">
         <Button
           variant="outline"
@@ -50,7 +54,7 @@ export function Pagination({ pagination, className, onPageChange }: PaginationPr
           onClick={() => handlePageChange(pagination.page - 1)}
           disabled={!pagination.hasPreviousPage}
         >
-          Previous
+          {UI_COPY.actions.previous}
         </Button>
         <div className="flex items-center gap-1">
           {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
@@ -74,6 +78,7 @@ export function Pagination({ pagination, className, onPageChange }: PaginationPr
                   variant={page === pagination.page ? "default" : "outline"}
                   size="sm"
                   onClick={() => handlePageChange(page)}
+                  aria-current={page === pagination.page ? "page" : undefined}
                 >
                   {page}
                 </Button>
@@ -86,9 +91,9 @@ export function Pagination({ pagination, className, onPageChange }: PaginationPr
           onClick={() => handlePageChange(pagination.page + 1)}
           disabled={!pagination.hasNextPage}
         >
-          Next
+          {UI_COPY.actions.next}
         </Button>
       </div>
     </div>
   );
-} 
+}

@@ -3,26 +3,21 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import MDEditor, { commands } from "@uiw/react-md-editor";
-import { Button } from "@/components/ui/button";
-import { Card, CardTitle, CardHeader, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectItem, SelectContent } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { generateSlug } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { Switch } from "@/components/ui/switch";
-import { Calendar } from "@/components/ui/calendar";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { format } from "date-fns";
-import { CalendarIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
-import ImageUploader from "./ImageUploader";
+  Card,
+  CardTitle,
+  CardHeader,
+  CardContent,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { generateSlug } from "@/lib/utils";
 import { Loading } from "./ui/loading";
+import { ContentFormFields } from "./content/content-form-fields";
+import { PublishControls } from "./content/publish-controls";
+import { UI_COPY } from "@/constants/ui";
 
 type MarkdownUploaderProps = {
   type?: "blogs" | "projects";
@@ -56,7 +51,6 @@ export default function MarkdownUploader({
 }: MarkdownUploaderProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const [message, setMessage] = useState("");
   const [type, setType] = useState(initialType);
   const [title, setTitle] = useState(initialData?.title || "");
   const [description, setDescription] = useState(initialData?.description || "");
@@ -65,61 +59,31 @@ export default function MarkdownUploader({
   const [image, setImage] = useState(initialData?.image || "");
   const [newImage, setNewImage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
   const [published, setPublished] = useState(initialData?.published || false);
   const [scheduledFor, setScheduledFor] = useState<Date | undefined>(
     initialData?.scheduledFor ? new Date(initialData.scheduledFor) : undefined
   );
 
   const validateContent = () => {
-    const isValid = content.trim().length > 100;
-    setContentError(isValid ? "" : "El contenido debe tener al menos 100 caracteres");
+    const isValid = content.trim().length >= 100;
+    setContentError(
+      isValid ? "" : "El contenido debe tener al menos 100 caracteres"
+    );
     return isValid;
   };
-
-  // const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   const file = event.target.files?.[0];
-  //   if (file) {
-  //     const reader = new FileReader();
-  //     reader.readAsDataURL(file);
-  //     reader.onloadend = async () => {
-  //       const base64data = reader.result as string;
-  //       try {
-  //         const response = await fetch('/api/upload-image', {
-  //           method: 'POST',
-  //           headers: {
-  //             'Content-Type': 'application/json',
-  //           },
-  //           body: JSON.stringify({ data: base64data }),
-  //         });
-
-  //         if (response.ok) {
-  //           const data = await response.json();
-  //           setNewImage(data.url);
-  //         } else {
-  //           setMessage('Error al subir la imagen');
-  //         }
-  //       } catch (error) {
-  //         setMessage('Error al subir la imagen');
-  //         console.error(error);
-  //       }
-  //     };
-  //   }
-  // };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
 
     if (!title.trim()) {
-      setMessage("El título es obligatorio");
+      toast.error("El título es obligatorio");
       setIsLoading(false);
       return;
     }
 
     if (!description.trim()) {
-      setMessage("La descripción es obligatoria");
+      toast.error("La descripción es obligatoria");
       setIsLoading(false);
       return;
     }
@@ -132,7 +96,7 @@ export default function MarkdownUploader({
     const finalImage = newImage || image;
 
     if (!finalImage) {
-      setMessage("Debes subir una imagen");
+      toast.error("Debes subir una imagen");
       setIsLoading(false);
       return;
     }
@@ -155,7 +119,6 @@ export default function MarkdownUploader({
       if (onSave) {
         await onSave(data);
       } else {
-        
         const response = await fetch("/api/save-content", {
           method: "POST",
           headers: {
@@ -166,28 +129,26 @@ export default function MarkdownUploader({
 
         const result = await response.json();
 
-        if (response.ok) {
-          setMessage("Contenido guardado exitosamente");
-          setTitle("");
-          setDescription("");
-          setContent("");
-          setImage("");
-          setNewImage("");
-          setPublished(false);
-          setScheduledFor(undefined);
-        } else {
-          setMessage(result.error || "Error al guardar el contenido");
+        if (!response.ok) {
+          throw new Error(result.error || "Error al guardar el contenido");
         }
+
+        toast.success(UI_COPY.success.saved);
+        setTitle("");
+        setDescription("");
+        setContent("");
+        setImage("");
+        setNewImage("");
+        setPublished(false);
+        setScheduledFor(undefined);
       }
 
-      if (type === "projects") {
-        router.push(`/projects`);
-      } else {
-        router.push(`/blogs`);
-      }
+      router.push(type === "projects" ? "/projects" : "/blogs");
     } catch (err) {
       console.error("Error saving content:", err);
-      setError("Error saving content. Please try again.");
+      toast.error(
+        err instanceof Error ? err.message : UI_COPY.errors.generic
+      );
     } finally {
       setIsLoading(false);
     }
@@ -203,57 +164,21 @@ export default function MarkdownUploader({
 
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="space-y-3">
-            <Label>Tipo de contenido</Label>
-            <Select
-              value={type}
-              onValueChange={(value: string) => setType(value as "blogs" | "projects")}
-              disabled={!!initialData}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Selecciona tipo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="blog">Entrada de Blog</SelectItem>
-                <SelectItem value="projects">Proyecto</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <ContentFormFields
+            type={type}
+            title={title}
+            description={description}
+            image={image}
+            isLoading={isLoading}
+            isEditMode={!!initialData}
+            onTypeChange={setType}
+            onTitleChange={setTitle}
+            onDescriptionChange={setDescription}
+            onImageUploaded={setNewImage}
+          />
 
           <div className="space-y-3">
-            <Label>Título</Label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ej: 🌍 El Cambio Climático y su Impacto"
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>Descripción</Label>
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descripción breve..."
-              className="min-h-[100px]"
-              disabled={isLoading}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>Imagen</Label>
-            <ImageUploader
-              onImageUploaded={(url) => {
-                setNewImage(url);
-              }}
-              initialImage={image}
-              folder={type}
-            />
-          </div>
-
-          <div className="space-y-3">
-            <Label>Contenido</Label>
+            <Label htmlFor="content">Contenido</Label>
             <div className="overflow-hidden rounded-lg border">
               <MDEditor
                 value={content}
@@ -267,52 +192,20 @@ export default function MarkdownUploader({
                 ]}
               />
             </div>
-            {contentError && <p className="text-sm text-destructive mt-2">{contentError}</p>}
+            {contentError && (
+              <p className="text-sm text-destructive mt-2" role="alert">
+                {contentError}
+              </p>
+            )}
           </div>
 
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="published"
-              checked={published}
-              onCheckedChange={setPublished}
-              disabled={isLoading || !!scheduledFor}
-            />
-            <Label htmlFor="published">Publicar inmediatamente</Label>
-          </div>
-
-          {!published && (
-            <div className="space-y-2">
-              <Label>Programar para más tarde</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !scheduledFor && "text-muted-foreground"
-                    )}
-                    disabled={isLoading}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {scheduledFor ? (
-                      format(scheduledFor, "PPP")
-                    ) : (
-                      <span>Seleccionar fecha</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={scheduledFor}
-                    onSelect={setScheduledFor}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          )}
+          <PublishControls
+            published={published}
+            scheduledFor={scheduledFor}
+            isLoading={isLoading}
+            onPublishedChange={setPublished}
+            onScheduledForChange={setScheduledFor}
+          />
 
           <div className="flex gap-4">
             <Button
@@ -321,7 +214,7 @@ export default function MarkdownUploader({
               onClick={() => router.back()}
               disabled={isLoading}
             >
-              Cancelar
+              {UI_COPY.actions.cancel}
             </Button>
             <Button type="submit" disabled={isLoading}>
               {isLoading ? (
@@ -330,23 +223,11 @@ export default function MarkdownUploader({
                   Guardando...
                 </>
               ) : (
-                "Guardar"
+                UI_COPY.actions.save
               )}
             </Button>
           </div>
         </form>
-
-        {message && (
-          <div className="mt-4 p-4 rounded-lg bg-muted/50">
-            <p className="text-sm text-muted-foreground">{message}</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-4 p-4 rounded-lg bg-destructive/50">
-            <p className="text-sm text-destructive">{error}</p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

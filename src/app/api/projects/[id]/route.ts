@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import Project, { IProject } from "@/models/Project";
 import connect from "@/lib/db";
+import { buildSlugOrObjectIdFilter } from "@/lib/utils";
 import { Model } from "mongoose";
 
 export async function GET(
@@ -12,7 +13,9 @@ export async function GET(
 
   try {
     const ProjectModel = Project as Model<IProject>;
-    const project = await ProjectModel.findById(id).exec();
+    const project = await ProjectModel.findOne(
+      buildSlugOrObjectIdFilter(id)
+    ).exec();
 
     if (!project) {
       return NextResponse.json({ error: "Proyecto no encontrado" }, { status: 404 });

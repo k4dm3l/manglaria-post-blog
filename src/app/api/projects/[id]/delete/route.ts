@@ -1,6 +1,7 @@
 import Project from "@/models/Project";
 import { NextResponse } from "next/server";
 import connect from "@/lib/db";
+import { buildSlugOrObjectIdFilter } from "@/lib/utils";
 import { Model } from "mongoose";
 import { IProject } from "@/models/Project";
 
@@ -19,7 +20,7 @@ export async function PATCH(
     }
 
     const ProjectModel = Project as Model<IProject>;
-    const project = await ProjectModel.findById(id);
+    const project = await ProjectModel.findOne(buildSlugOrObjectIdFilter(id));
     if (!project) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }

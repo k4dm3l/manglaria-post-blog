@@ -25,6 +25,7 @@ export type BlogPost = {
   _id: string;
   title: string;
   description: string;
+  image?: string;
   author: {
     name: string;
     profileImg: string;
@@ -63,7 +64,7 @@ const ActionsCell = ({ blogPost }: { blogPost: BlogPost }) => {
   }
 
   const handleEdit = () => {
-    router.push(`/editor/blogs/${blogPost._id}`);
+    router.push(`/editor/blogs/${blogPost.slug ?? blogPost._id}`);
   };
 
   return (
