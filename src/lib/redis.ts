@@ -101,6 +101,10 @@ function getRedisClient(): Redis | null {
       }
     });
 
+    void redis.connect().catch((error: Error) => {
+      disableRedis(`Redis connection failed: ${error.message}.`);
+    });
+
     redisInitialized = true;
     return redis;
   } catch (error) {
@@ -111,26 +115,20 @@ function getRedisClient(): Redis | null {
   }
 }
 
-export { getRedisClient };
-
 function shouldAttemptRedisOperation(client: Redis | null): boolean {
   if (!client || redisDisabled) {
     return false;
   }
 
   const status = (client as Redis & { status?: string }).status;
-  if (
-    !status ||
-    status === 'ready' ||
-    status === 'connect' ||
-    status === 'wait' ||
-    status === 'reconnecting'
-  ) {
-    return true;
-  }
-
-  return false;
+  return status === 'ready';
 }
+
+export function isRedisOperational(): boolean {
+  return shouldAttemptRedisOperation(getRedisClient());
+}
+
+export { getRedisClient };
 
 export const getCache = async <T>(key: string): Promise<T | null> => {
   const client = getRedisClient();

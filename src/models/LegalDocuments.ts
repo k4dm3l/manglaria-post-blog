@@ -1,15 +1,12 @@
 import mongoose, { Schema, Document, Types } from "mongoose";
+import {
+  LegalDocumentLinks,
+  LegalDocumentsYearRecord,
+} from "@/constants/legal-documents";
 
-export interface ILegalDocuments extends Document {
-  financialStatementCorporacionManglaria?: string;
-  certificateOfLegalRequirements?: string;
-  actOfConstitutionCorporacionManglaria?: string;
-  certificateOfExistence?: string;
-  actOfGeneralAssembly?: string;
-  tributaryStatementsCorporacionManglaria?: string;
-  backgroundCheckCertificate?: string;
-  certificateOfManagmentPositions?: string;
-  managementReport?: string;
+export type { LegalDocumentLinks, LegalDocumentsYearRecord };
+
+export interface ILegalDocuments extends Document, LegalDocumentsYearRecord {
   updatedBy?: Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -17,6 +14,12 @@ export interface ILegalDocuments extends Document {
 
 const legalDocumentsSchema = new Schema<ILegalDocuments>(
   {
+    year: {
+      type: Number,
+      required: true,
+      min: 2000,
+      max: 2100,
+    },
     financialStatementCorporacionManglaria: { type: String, default: "" },
     certificateOfLegalRequirements: { type: String, default: "" },
     actOfConstitutionCorporacionManglaria: { type: String, default: "" },
@@ -31,4 +34,8 @@ const legalDocumentsSchema = new Schema<ILegalDocuments>(
   { timestamps: true }
 );
 
-export const LegalDocuments = mongoose.models.LegalDocuments || mongoose.model<ILegalDocuments>("LegalDocuments", legalDocumentsSchema); 
+legalDocumentsSchema.index({ year: 1 }, { unique: true });
+
+export const LegalDocuments =
+  mongoose.models.LegalDocuments ||
+  mongoose.model<ILegalDocuments>("LegalDocuments", legalDocumentsSchema);

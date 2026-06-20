@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { RateLimiterRedis } from 'rate-limiter-flexible';
-import { getRedisClient } from './redis';
+import { getRedisClient, isRedisOperational } from './redis';
 
 const createRateLimiter = (
   keyPrefix: string,
@@ -50,7 +50,7 @@ export async function rateLimit(
   limiter: RateLimiterRedis | null,
   identifier: string
 ): Promise<{ success: boolean; message?: string }> {
-  if (!limiter) {
+  if (!limiter || !isRedisOperational()) {
     return { success: true };
   }
 
@@ -63,10 +63,6 @@ export async function rateLimit(
         success: false,
         message: 'Too many requests. Please try again later.',
       };
-    }
-
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('Rate limit skipped due to store error:', error);
     }
 
     return { success: true };
