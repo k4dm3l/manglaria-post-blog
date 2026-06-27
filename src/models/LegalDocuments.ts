@@ -29,6 +29,8 @@ const legalDocumentsSchema = new Schema<ILegalDocuments>(
     backgroundCheckCertificate: { type: String, default: "" },
     certificateOfManagmentPositions: { type: String, default: "" },
     managementReport: { type: String, default: "" },
+    organizationAssets: { type: String, default: "" },
+    incomeStatement: { type: String, default: "" },
     updatedBy: { type: Schema.Types.ObjectId, ref: "User", required: false },
   },
   { timestamps: true }
